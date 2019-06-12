@@ -19,7 +19,8 @@ ccle_meta <- readRDS(file.path("data", "cell_line_metadata.tib")) %>%
 
 ## RAS mutants
 ras_muts <- ccle_muts %>%
-    filter(hugo_symbol %in% c("KRAS", "NRAS", "HRAS")) %>%
+    filter(hugo_symbol %in% c("KRAS", "NRAS", "HRAS") &
+           variant_classification != "Silent") %>%
     select(dep_map_id, hugo_symbol, protein_change) %>%
     dplyr::rename(ras = "hugo_symbol",
                   allele = "protein_change") %>%
