@@ -1,0 +1,199 @@
+---
+title: "KRAS G13 Synthetic Lethality"
+author: "Joshua H. Cook"
+date: "June 11, 2019"
+output:
+    html_document:
+        toc: true
+        toc_depth: 2
+        number_sections: true
+        df_print: kable
+        code_folding: hide
+        keep_md: true
+---
+
+
+
+# Purpose
+
+The goal of this analysis is to identify synthetic lethal interactions with *KRAS* G13D mutations.
+
+# Data {.tabset}
+
+The data is from the genome-wide CRISPR-Cas9 loss-of-function screen named "Achilles" from the [DepMap Project](https://depmap.org/portal/). This data was downloaded, cleaned, and made available in the ['tidy_Achilles' GitHub repository](https://github.com/jhrcook/tidy_Achilles).
+
+## The cell lines
+
+The following plot shows the number of cell lines in CCLE with either a *KRAS* or *NRAS* mutation (only showing alleles found in at least two cell lines of a disease).
+
+
+```r
+## CCLE data
+ccle_muts <- readRDS(file.path("data", "cell_line_mutations.tib"))
+ccle_meta <- readRDS(file.path("data", "cell_line_metadata.tib")) %>%
+    select(
+        dep_map_id, stripped_cell_line_name, disease, disease_sutype,
+        gender, achilles_n_replicates
+    )
+
+## RAS mutants
+ras_muts <- ccle_muts %>%
+    filter(hugo_symbol %in% c("KRAS", "NRAS", "HRAS")) %>%
+    select(dep_map_id, hugo_symbol, protein_change) %>%
+    dplyr::rename(ras = "hugo_symbol",
+                  allele = "protein_change") %>%
+    mutate(allele = str_remove_all(allele, "^p\\."),
+           ras_allele = paste0(ras, "_", allele),
+           codon = as.numeric(str_extract(allele, "[:digit:]+"))) %>%
+    group_by(dep_map_id) %>%
+    mutate(num_ras_muts = n_distinct(ras_allele)) %>%
+    ungroup() %>%
+    left_join(ccle_meta, by = "dep_map_id") %T>%
+    saveRDS(file.path("data", "ras_mutants_info.tib"))
+
+hotspots <- c(12, 13, 61, 146)
+
+## plot alleles in CCLE
+ras_muts %>%
+    count(ras_allele, disease, ras, allele, ras_allele, codon) %>%
+    filter(n >= 2) %>%
+    mutate(disease = str_to_lower(str_replace_all(disease, "_", " ")),
+           ras_allele = str_replace_all(ras_allele, "_", " "),
+           codon = ifelse(codon %in% hotspots, codon, "other")) %>%
+    ggplot(aes(x = disease, y = ras_allele)) +
+    geom_point(aes(color = ras, fill = ras, size = n, shape = factor(codon))) +
+    scale_color_manual(values = c(
+            KRAS = "tomato", NRAS = "dodgerblue", HRAS = "mediumseagreen"
+        )) +
+    scale_fill_manual(values = c(
+            KRAS = "tomato", NRAS = "dodgerblue", HRAS = "mediumseagreen"
+        ),
+        guide = FALSE) +
+    scale_shape_manual(values = c(21, 22, 23, 24, 25)) +
+    theme_minimal() +
+    theme(
+            axis.text.x = element_text(angle = 60, size = 7, hjust = 1),
+            axis.text.y = element_text(size = 9, hjust = 1),
+            axis.title = element_blank()
+        ) +
+    labs(size = "number\nof lines", color = "RAS", shape = "codon",
+         title = "RAS-mutant cell lines in the CCLE")
+```
+
+![](README_files/figure-html/show_cllealleles-1.png)<!-- -->
+
+However, the DepMap has yet to screen all of the CCLE cell lines. The following only includes the cell lines used in Achilles.
+
+
+```r
+# DepMap data
+dep_map <- readRDS(file.path("data", "Achilles_gene_effect.tib"))
+ids_screened <- dep_map %>%
+    pull(dep_map_id) %>%
+    unlist() %>%
+    unique()
+
+## plot alleles in CCLE and screened by DepMap
+ras_muts %>%
+    filter(dep_map_id %in% !!ids_screened) %>%
+    count(ras_allele, disease, ras, allele, ras_allele, codon) %>%
+    filter(n >= 2) %>%
+    mutate(disease = str_to_lower(str_replace_all(disease, "_", " ")),
+           ras_allele = str_replace_all(ras_allele, "_", " "),
+           codon = ifelse(codon %in% hotspots, codon, "other")) %>%
+    ggplot(aes(x = disease, y = ras_allele)) +
+    geom_point(aes(color = ras, fill = ras, size = n, shape = factor(codon))) +
+    scale_color_manual(values = c(
+            KRAS = "tomato", NRAS = "dodgerblue", HRAS = "mediumseagreen"
+        )) +
+    scale_fill_manual(values = c(
+            KRAS = "tomato", NRAS = "dodgerblue", HRAS = "mediumseagreen"
+        ),
+        guide = FALSE) +
+    scale_shape_manual(values = c(21, 22, 23, 24, 25)) +
+    theme_minimal() +
+    theme(
+            axis.text.x = element_text(angle = 60, size = 7, hjust = 1),
+            axis.text.y = element_text(size = 9, hjust = 1),
+            axis.title = element_blank()
+        ) +
+    labs(size = "number\nof lines", color = "RAS", shape = "codon",
+         title = "RAS-mutant cell lines screened by DepMap")
+```
+
+![](README_files/figure-html/show_depmapalleles-1.png)<!-- -->
+
+As of the 2019Q2 release, there are 563 screened cell lines. The most frequent allele is *KRAS* G12D, and the organs with the most frequent *KRAS* mutants are colorectal, lung, and pancreas. There are 
+
+
+```r
+# table of KRAS alleles
+ras_muts %>%
+    filter(dep_map_id %in% !!ids_screened & ras == "KRAS") %>%
+    count(ras_allele, disease) %>%
+    filter(n >= 2) %>%
+    mutate(disease = str_to_title(str_replace_all(disease, "_", " ")),
+           ras_allele = str_replace_all(ras_allele, "_", " ")) %>%
+    arrange(disease, desc(n))
+```
+
+<div class="kable-table">
+
+ras_allele   disease              n
+-----------  -----------------  ---
+KRAS G12D    Bile Duct            3
+KRAS G12D    Colorectal           3
+KRAS G12V    Colorectal           3
+KRAS G13D    Colorectal           3
+KRAS G12C    Colorectal           2
+KRAS G12D    Gastric              4
+KRAS G12C    Lung                 9
+KRAS G12V    Lung                 4
+KRAS G12A    Lung                 2
+KRAS G12D    Lung                 2
+KRAS G13D    Lung                 2
+KRAS Q61H    Lung                 2
+KRAS Q61K    Lung                 2
+KRAS G12A    Multiple Myeloma     2
+KRAS G12D    Ovary                4
+KRAS G12D    Pancreas             9
+KRAS G12V    Pancreas             7
+KRAS G12R    Pancreas             4
+KRAS Q61H    Pancreas             2
+KRAS G12D    Uterus               2
+
+</div>
+
+## The dependency scores
+
+Below are the distributions of the depletion scores in the three organs with the highest frequency of *KRAS* mutations.
+
+
+```r
+dep_map %>%
+    filter(disease %in% names(!!organs_pal)) %>%
+    group_by(disease, gene) %>%
+    summarise(gene_effect_avg = mean(gene_effect)) %>%
+    ungroup() %>%
+    mutate(disease = str_to_lower(str_replace_all(disease, "_", " "))) %>%
+    ggplot() +
+    geom_density(aes(x = gene_effect_avg, color = disease)) +
+    facet_wrap(~disease, ncol = 3, scales = "free_y") +
+    scale_color_manual(values = organs_pal, guide = FALSE) +
+    scale_x_continuous(limits = c(-2.2, 1)) +
+    scale_y_continuous(expand = expand_scale(mult = c(0, 0.1))) +
+    theme_classic() +
+    theme(
+            strip.background = element_blank()
+        ) +
+    labs(x = "depletion effect", y = "density",
+         title = "Distribution of depletion scores")
+```
+
+```
+#> Warning: Removed 6 rows containing non-finite values (stat_density).
+```
+
+![](README_files/figure-html/distr_geneeffect-1.png)<!-- -->
+
+They are not normally distributed. Instead, most of the values lie near 0, indicating that most knock-out events had little impact on the viability of the cell lines (as expected). There is a tail to the left filled with the genes that did have an effect when knocked-out.
