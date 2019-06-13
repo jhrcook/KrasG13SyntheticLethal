@@ -10,3 +10,9 @@ organs_pal <- c(
     lung = "darkorchid2",
     pancreas = "olivedrab3"
 )
+
+allele_pal <- c(
+    KRAS_G13D = "tomato",
+    KRAS_G12 = "navy",
+    WT = "grey50"
+)
