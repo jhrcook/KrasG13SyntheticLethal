@@ -36,7 +36,7 @@ ras_muts <- ccle_muts %>%
 hotspots <- c(12, 13, 61, 146)
 
 ## plot alleles in CCLE
-ras_muts %>%
+ras_muts_plot <- ras_muts %>%
     count(ras_allele, disease, ras, allele, ras_allele, codon) %>%
     filter(n >= 2) %>%
     mutate(disease = str_to_lower(str_replace_all(disease, "_", " ")),
@@ -55,7 +55,8 @@ ras_muts %>%
         ) +
     labs(size = "number\nof lines", color = "RAS", shape = "codon",
          title = "RAS-mutant cell lines in the CCLE")
-
+ggsave(filename = "images/data_prep/ras_muts_plot.png", plot = ras_muts_plot,
+       width = 8, height = 7, units = "in", dpi = 300)
 
 # plot alleles in DepMap
 dep_map <- readRDS(file.path("data", "Achilles_gene_effect.tib"))
@@ -65,7 +66,7 @@ ids_screened <- dep_map %>%
     unique()
 
 ## plot alleles in CCLE and screened by DepMap
-ras_muts %>%
+depmap_ras_muts_plot <- ras_muts %>%
     filter(dep_map_id %in% !!ids_screened) %>%
     count(ras_allele, disease, ras, allele, ras_allele, codon) %>%
     filter(n >= 2) %>%
@@ -85,7 +86,9 @@ ras_muts %>%
         ) +
     labs(size = "number\nof lines", color = "RAS", shape = "codon",
          title = "RAS-mutant cell lines screened by DepMap")
-
+ggsave(filename = "images/data_prep/depmap_ras_muts_plot.png",
+       plot = depmap_ras_muts_plot,
+       width = 8, height = 5.5, units = "in", dpi = 300)
 
 # table of KRAS alleles
 ras_muts %>%
@@ -96,9 +99,10 @@ ras_muts %>%
            ras_allele = str_replace_all(ras_allele, "_", " ")) %>%
     arrange(disease, desc(n))
 
+
 #### ---- DepMap Data ---- ####
 
-dep_map %>%
+depmap_dist_plot <- dep_map %>%
     filter(disease %in% names(!!organs_pal)) %>%
     group_by(disease, gene) %>%
     summarise(gene_effect_avg = mean(gene_effect)) %>%
@@ -116,3 +120,6 @@ dep_map %>%
         ) +
     labs(x = "depletion effect", y = "density",
          title = "Distribution of depletion scores")
+ggsave(filename = "images/data_prep/depmap_dist_plot.png",
+       plot = depmap_dist_plot,
+       width = 8, height = 3.5, units = "in", dpi = 300)
