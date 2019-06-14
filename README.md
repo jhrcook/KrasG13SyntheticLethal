@@ -7,7 +7,7 @@ output:
         toc: true
         toc_depth: 2
         number_sections: true
-        df_print: kable
+        df_print: paged
         code_folding: hide
         keep_md: true
 ---
@@ -26,174 +26,100 @@ The data is from the genome-wide CRISPR-Cas9 loss-of-function screen named "Achi
 
 The following plot shows the number of cell lines in CCLE with either a *KRAS* or *NRAS* mutation (only showing alleles found in at least two cell lines of a disease).
 
-
-```r
-## CCLE data
-ccle_muts <- readRDS(file.path("data", "cell_line_mutations.tib"))
-ccle_meta <- readRDS(file.path("data", "cell_line_metadata.tib")) %>%
-    select(
-        dep_map_id, stripped_cell_line_name, disease, disease_sutype,
-        gender, achilles_n_replicates
-    )
-
-## RAS mutants
-ras_muts <- ccle_muts %>%
-    filter(hugo_symbol %in% c("KRAS", "NRAS", "HRAS")) %>%
-    select(dep_map_id, hugo_symbol, protein_change) %>%
-    dplyr::rename(ras = "hugo_symbol",
-                  allele = "protein_change") %>%
-    mutate(allele = str_remove_all(allele, "^p\\."),
-           ras_allele = paste0(ras, "_", allele),
-           codon = as.numeric(str_extract(allele, "[:digit:]+"))) %>%
-    group_by(dep_map_id) %>%
-    mutate(num_ras_muts = n_distinct(ras_allele)) %>%
-    ungroup() %>%
-    left_join(ccle_meta, by = "dep_map_id") %T>%
-    saveRDS(file.path("data", "ras_mutants_info.tib"))
-
-hotspots <- c(12, 13, 61, 146)
-
-## plot alleles in CCLE
-ras_muts %>%
-    count(ras_allele, disease, ras, allele, ras_allele, codon) %>%
-    filter(n >= 2) %>%
-    mutate(disease = str_to_lower(str_replace_all(disease, "_", " ")),
-           ras_allele = str_replace_all(ras_allele, "_", " "),
-           codon = ifelse(codon %in% hotspots, codon, "other")) %>%
-    ggplot(aes(x = disease, y = ras_allele)) +
-    geom_point(aes(color = ras, fill = ras, size = n, shape = factor(codon))) +
-    scale_color_manual(values = c(
-            KRAS = "tomato", NRAS = "dodgerblue", HRAS = "mediumseagreen"
-        )) +
-    scale_fill_manual(values = c(
-            KRAS = "tomato", NRAS = "dodgerblue", HRAS = "mediumseagreen"
-        ),
-        guide = FALSE) +
-    scale_shape_manual(values = c(21, 22, 23, 24, 25)) +
-    theme_minimal() +
-    theme(
-            axis.text.x = element_text(angle = 60, size = 7, hjust = 1),
-            axis.text.y = element_text(size = 9, hjust = 1),
-            axis.title = element_blank()
-        ) +
-    labs(size = "number\nof lines", color = "RAS", shape = "codon",
-         title = "RAS-mutant cell lines in the CCLE")
-```
-
-![](README_files/figure-html/show_cllealleles-1.png)<!-- -->
+![](images/data_prep/ras_muts_plot.png)
 
 However, the DepMap has yet to screen all of the CCLE cell lines. The following only includes the cell lines used in Achilles.
 
+![](images/data_prep/depmap_ras_muts_plot.png)
+
 
 ```r
-# DepMap data
-dep_map <- readRDS(file.path("data", "Achilles_gene_effect.tib"))
-ids_screened <- dep_map %>%
+ids_screened <- readRDS(file.path("data", "Achilles_gene_effect.tib")) %>%
     pull(dep_map_id) %>%
     unlist() %>%
     unique()
-
-## plot alleles in CCLE and screened by DepMap
-ras_muts %>%
-    filter(dep_map_id %in% !!ids_screened) %>%
-    count(ras_allele, disease, ras, allele, ras_allele, codon) %>%
-    filter(n >= 2) %>%
-    mutate(disease = str_to_lower(str_replace_all(disease, "_", " ")),
-           ras_allele = str_replace_all(ras_allele, "_", " "),
-           codon = ifelse(codon %in% hotspots, codon, "other")) %>%
-    ggplot(aes(x = disease, y = ras_allele)) +
-    geom_point(aes(color = ras, fill = ras, size = n, shape = factor(codon))) +
-    scale_color_manual(values = c(
-            KRAS = "tomato", NRAS = "dodgerblue", HRAS = "mediumseagreen"
-        )) +
-    scale_fill_manual(values = c(
-            KRAS = "tomato", NRAS = "dodgerblue", HRAS = "mediumseagreen"
-        ),
-        guide = FALSE) +
-    scale_shape_manual(values = c(21, 22, 23, 24, 25)) +
-    theme_minimal() +
-    theme(
-            axis.text.x = element_text(angle = 60, size = 7, hjust = 1),
-            axis.text.y = element_text(size = 9, hjust = 1),
-            axis.title = element_blank()
-        ) +
-    labs(size = "number\nof lines", color = "RAS", shape = "codon",
-         title = "RAS-mutant cell lines screened by DepMap")
 ```
 
-![](README_files/figure-html/show_depmapalleles-1.png)<!-- -->
-
-As of the 2019Q2 release, there are 563 screened cell lines. The most frequent allele is *KRAS* G12D, and the organs with the most frequent *KRAS* mutants are colorectal, lung, and pancreas. There are 
+As of the 2019Q2 release, there are 563 screened cell lines. The most frequent allele is *KRAS* G12D, and the organs with the most frequent *KRAS* mutants are colorectal, lung, and pancreas. The following table shows the number of cell lines with each *KRAS* allele.
 
 
 ```r
-# table of KRAS alleles
-ras_muts %>%
+readRDS(file.path("data", "ras_mutants_info.tib")) %>%
     filter(dep_map_id %in% !!ids_screened & ras == "KRAS") %>%
     count(ras_allele, disease) %>%
     filter(n >= 2) %>%
     mutate(disease = str_to_title(str_replace_all(disease, "_", " ")),
            ras_allele = str_replace_all(ras_allele, "_", " ")) %>%
-    arrange(disease, desc(n))
+    arrange(disease, desc(n)) %>%
+    dplyr::rename(`RAS allele` = "ras_allele",
+                  `Origin of cell line` = "disease",
+                  `num. of cell lines` = "n")
 ```
 
-<div class="kable-table">
-
-ras_allele   disease              n
------------  -----------------  ---
-KRAS G12D    Bile Duct            3
-KRAS G12D    Colorectal           3
-KRAS G12V    Colorectal           3
-KRAS G13D    Colorectal           3
-KRAS G12C    Colorectal           2
-KRAS G12D    Gastric              4
-KRAS G12C    Lung                 9
-KRAS G12V    Lung                 4
-KRAS G12A    Lung                 2
-KRAS G12D    Lung                 2
-KRAS G13D    Lung                 2
-KRAS Q61H    Lung                 2
-KRAS Q61K    Lung                 2
-KRAS G12A    Multiple Myeloma     2
-KRAS G12D    Ovary                4
-KRAS G12D    Pancreas             9
-KRAS G12V    Pancreas             7
-KRAS G12R    Pancreas             4
-KRAS Q61H    Pancreas             2
-KRAS G12D    Uterus               2
-
+<div data-pagedtable="false">
+  <script data-pagedtable-source type="application/json">
+{"columns":[{"label":["RAS allele"],"name":[1],"type":["chr"],"align":["left"]},{"label":["Origin of cell line"],"name":[2],"type":["chr"],"align":["left"]},{"label":["num. of cell lines"],"name":[3],"type":["int"],"align":["right"]}],"data":[{"1":"KRAS G12D","2":"Bile Duct","3":"3"},{"1":"KRAS G12D","2":"Colorectal","3":"3"},{"1":"KRAS G12V","2":"Colorectal","3":"3"},{"1":"KRAS G13D","2":"Colorectal","3":"3"},{"1":"KRAS G12C","2":"Colorectal","3":"2"},{"1":"KRAS G12D","2":"Gastric","3":"4"},{"1":"KRAS G12C","2":"Lung","3":"9"},{"1":"KRAS G12V","2":"Lung","3":"4"},{"1":"KRAS G12A","2":"Lung","3":"2"},{"1":"KRAS G12D","2":"Lung","3":"2"},{"1":"KRAS G13D","2":"Lung","3":"2"},{"1":"KRAS Q61H","2":"Lung","3":"2"},{"1":"KRAS Q61K","2":"Lung","3":"2"},{"1":"KRAS G12A","2":"Multiple Myeloma","3":"2"},{"1":"KRAS G12D","2":"Ovary","3":"4"},{"1":"KRAS G12D","2":"Pancreas","3":"9"},{"1":"KRAS G12V","2":"Pancreas","3":"7"},{"1":"KRAS G12R","2":"Pancreas","3":"4"},{"1":"KRAS Q61H","2":"Pancreas","3":"2"},{"1":"KRAS G12D","2":"Uterus","3":"2"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
 </div>
 
 ## The dependency scores
 
 Below are the distributions of the depletion scores in the three organs with the highest frequency of *KRAS* mutations.
 
-
-```r
-dep_map %>%
-    filter(disease %in% names(!!organs_pal)) %>%
-    group_by(disease, gene) %>%
-    summarise(gene_effect_avg = mean(gene_effect)) %>%
-    ungroup() %>%
-    mutate(disease = str_to_lower(str_replace_all(disease, "_", " "))) %>%
-    ggplot() +
-    geom_density(aes(x = gene_effect_avg, color = disease)) +
-    facet_wrap(~disease, ncol = 3, scales = "free_y") +
-    scale_color_manual(values = organs_pal, guide = FALSE) +
-    scale_x_continuous(limits = c(-2.2, 1)) +
-    scale_y_continuous(expand = expand_scale(mult = c(0, 0.1))) +
-    theme_classic() +
-    theme(
-            strip.background = element_blank()
-        ) +
-    labs(x = "depletion effect", y = "density",
-         title = "Distribution of depletion scores")
-```
-
-```
-#> Warning: Removed 6 rows containing non-finite values (stat_density).
-```
-
-![](README_files/figure-html/distr_geneeffect-1.png)<!-- -->
+![](images/data_prep/depmap_dist_plot.png)
 
 They are not normally distributed. Instead, most of the values lie near 0, indicating that most knock-out events had little impact on the viability of the cell lines (as expected). There is a tail to the left filled with the genes that did have an effect when knocked-out.
+
+
+# Linear model
+
+## *KRAS* G13D vs *KRAS* G12 vs. WT and target gene mutation
+
+### The model
+
+(Analysis conducted in `subscripts/linear_model.R`.)
+
+The first attempt at modeling the data was using a standard linear model to estimate the depletion effect given the *KRAS* allele and mutation status of the target gene. The model had two covariates, *KRAS* allele and the mutational status of the target gene (binary). The alleles were grouped as *KRAS* codon 12, *KRAS* G13D, or WT. Only genes that caused a depletion to -0.5 or lower at least once were used.
+
+Cell lines were not used if they had multiple *KRAS* mutations or a mutation in *NRAS* or *RAF*.
+
+The following plot shows a volcano plot for the difference in the estimates for *KRAS* G12 and *KRAS* G13D and the p-value of the model. The labeled genes had a p-value less than 0.05 and a difference in estimate of magnitude greater than 0.2. 
+
+![](images/linear_model/volcano_plot.png)
+
+The models were filtered by having a BH FDR adjusted p-value (q-value) below 0.2 and the p-value of the *KRAS* G13D parameter was below 0.05.
+
+### G13D-specific depletion
+
+The first plot shows target genes that had a significantly stronger depletion effect in *KRAS* G13D cell lines.
+
+![](images/linear_model/G13DvsG12vsWT_lm_depletion.png)
+
+### G13D-specific survival
+
+On the other hand, the following plot shows target genes that had a significantly stronger *survival* effect (relative to the other alleles tested) in *KRAS* G13D cell lines. I use the term "survival" here due to a lack of a better option, but "reduced synthetic lethality" may be more accurate.
+
+![](images/linear_model/G13DvsG12vsWT_lm_survival.png)
+
+## Only G12 and G13D
+
+I have additionally run the same model without WT samples, thus the intercept was the *KRAS* G12 effect and other covariates were *KRAS* G13D and mutational status of the target. Looking at the target genes that could be modeled and how their results compare to the previous version of the model (with WT), they do not capture anything new. I believe including the WT as the intercept is a logical inclusion.
+
+## Including gene expression of the target gene
+
+I ran the same model as before, including KRAS WT, G12, and G13D and whether the target gene was mutated or not, now including the RNA expression levels of the target gene in each cell line. 
+
+The following plot is a volcano with the *KRAS* G13D effect on the x-axis and log-transformed p-value on the y-axis. The highlighted genes had an overall model q-value (FDR adjusted p-value) below 0.20, *KRAS* G13D p-value below 0.05, and a *KRAS* G13D estimate of magnitude greater than 0.20.
+
+![](images/linear_model/expr_volcano_plot.png)
+
+
+### Analysis of hits
+
+I looked at the frequency of co-mutation of the genes identified by the linear model with *KRAS* G12, *KRAS* G13D, and WT in human tumor samples from COAD, LUAD, and PAAD. Below is a heatmap colored by co-mutation frequency. The numbers in the cells indicate the number of co-mutation events.
+
+![](images/linear_model/comut_heatmap.png)
+
+---
+
+There is currently minimal code in the README, however, it will be added at the end from the scripts where the analysis was originally done. The end goal is for the README to be a fully reproducible document on its own.
