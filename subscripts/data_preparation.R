@@ -33,6 +33,7 @@ ras_muts <- ccle_muts %>%
     left_join(ccle_meta, by = "dep_map_id") %T>%
     saveRDS(file.path("data", "ras_mutants_info.tib"))
 
+# KRAS hotspots
 hotspots <- c(12, 13, 61, 146)
 
 ## plot alleles in CCLE
