@@ -4,6 +4,7 @@
 library(tidyverse)
 
 source("subscripts/global_constants.R")
+source("subscripts/model_subroutines.R")
 
 set.seed(0)
 
@@ -140,14 +141,9 @@ models1_open <- unnest_model_results(models1)
 
 # TODO:
 
-g13d_sigs <- models1 %>%
-    mutate(model_fit = map(linear_model, ~ .x$model_fit),
-           model_info = map(linear_model, ~ .x$model_info)) %>%
-    select(-linear_model) %>%
-    unnest(model_info) %>%
-    filter(p.adjust(p_value, method = "BH") < 0.2) %>%
-    unnest(model_fit) %>%
-    filter(term == "ras_alleleKRAS_G13D" & p_value1 < 0.05)
+g13d_sigs <- models1_open %>%
+    filter(p.adjust(p_value_model, method = "BH") < 0.2) %>%
+    filter(term == "ras_alleleKRAS_G13D" & p_value_fit < 0.05)
 g13d_down <- g13d_sigs %>%
     filter(estimate < 0) %>%
     pull(gene) %>% unlist() %>% unique()
@@ -175,26 +171,21 @@ g13d_up <- g13d_sigs %>%
 
 # visualization
 # volcano: diff in estimates of RAS allele vs -log(pval)
-volcano_plot <- models %>%
+volcano_plot <- models1_open %>%
     filter(gene != "KRAS") %>%
-    mutate(model_fit = map(linear_model, ~ .x$model_fit),
-           model_info = map(linear_model, ~ .x$model_info)) %>%
-    select(-linear_model) %>%
-    unnest(model_info) %>%
-    unnest(model_fit) %>%
     filter(str_detect(term, "ras_allele")) %>%
     mutate(ras_allele = str_remove(term, "ras_allele")) %>%
-    select(gene, ras_allele, estimate, p_value) %>%
+    select(gene, ras_allele, estimate, p_value_model) %>%
     spread(ras_allele, estimate) %>%
     mutate(diff_estimate = KRAS_G12 - KRAS_G13D) %>%
     mutate(point_color = ifelse(
-        diff_estimate < -0.2 & p_value < 0.05, "KRAS_G12", NA
+        diff_estimate < -0.2 & p_value_model < 0.05, "KRAS_G12", NA
     )) %>%
     mutate(point_color = ifelse(
-        diff_estimate > 0.2 & p_value < 0.05, "KRAS_G13D", point_color
+        diff_estimate > 0.2 & p_value_model < 0.05, "KRAS_G13D", point_color
     )) %>%
     mutate(label = ifelse(!is.na(point_color), gene, "")) %>%
-    ggplot(aes(x = diff_estimate, y = -log(p_value))) +
+    ggplot(aes(x = diff_estimate, y = -log(p_value_model))) +
     geom_point(aes(color = point_color), size = 0.8) +
     geom_vline(xintercept = 0, color = "grey20", size = 0.5, linetype = 2) +
     ggrepel::geom_text_repel(aes(label = label), size = 2, color = "grey20") +
@@ -208,21 +199,16 @@ volcano_plot <- models %>%
         legend.background = element_blank(),
     ) +
     labs(x = "difference in estimate", y = "-log( p-value of model )",
-         color = "largest effect")
-ggsave(filename = "images/linear_model/volcano_plot.png", plot = volcano_plot,
+         color = "largest effect",
+         title = "Difference in effect size of KRAS G12 KRAS G13D",
+         subtitle = "Highlighted genes had statisitically significant models and a difference in estimate with magnitude of at least 0.2")
+ggsave(filename = "images/linear_model/model1_volcano_plot.png",
+       plot = volcano_plot,
        width = 8, height = 6, units = "in", dpi = 300)
 
 
-tt <- models %>%
-    mutate(model_fit = map(linear_model, ~ .x$model_fit)) %>%
-    select(-linear_model) %>%
-    unnest(model_fit) %>%
-    filter(term == "(Intercept)") %>%
-    select(gene, estimate) %>%
-    dplyr::rename(WT_est = "estimate")
-
 # increased synthetic lethal interactions with G13D
-g13d_depletion_plot <- model_data %>%
+g13d_depletion_plot <- model_data1 %>%
     filter(gene %in% g13d_down) %>%
     ggplot(aes(x = ras_allele, y = gene_effect)) +
     facet_wrap(~ gene, scales = "free") +
@@ -237,62 +223,15 @@ g13d_depletion_plot <- model_data %>%
     ) +
     labs(y = "depletion", color = "RAS allele",
          title = "Target genes that cause G13D-specific depletion",
-         subtitle = "KRAS G13D was a strong predictor for whether the targeting of the indicated gene caused depletion of the cell line.")
-ggsave(filename = "images/linear_model/G13DvsG12vsWT_lm_depletion.png",
-       plot = g13d_depletion_plot,
-       width = 10, height = 8, units = "in", dpi = 300)
-
-g13d_depletion_corrected_plot <- model_data %>%
-    filter(gene %in% g13d_down) %>%
-    left_join(tt, by = "gene") %>%
-    mutate(gene_effect_corrected = gene_effect - WT_est) %>%
-    ggplot(aes(x = ras_allele, y = gene_effect_corrected)) +
-    facet_wrap(~ gene, scales = "free") +
-    geom_boxplot(aes(color = ras_allele), outlier.shape = NA) +
-    geom_hline(yintercept = 0, size = 0.5, color = "black", linetype = 2) +
-    geom_jitter(aes(color = ras_allele), size = 0.5, width = 0.2) +
-    scale_color_manual(values = allele_pal) +
-    theme_minimal() +
-    theme(
-        axis.text.x = element_blank(),
-        axis.title.x = element_blank()
-    ) +
-    labs(y = "depletion", color = "RAS allele",
-         title = "Target genes that cause G13D-specific depletion",
-         subtitle = "KRAS G13D was a strong predictor for whether the targeting of the indicated gene caused depletion of the cell line.")
-ggsave(filename = "images/linear_model/G13DvsG12vsWT_lm_depletion_corrected.png",
+         subtitle = "KRAS G13D was a significant predictor for whether the targeting of the indicated gene caused depletion of the cell line.")
+ggsave(filename = "images/linear_model/model1_G13Ddepletion.png",
        plot = g13d_depletion_plot,
        width = 10, height = 8, units = "in", dpi = 300)
 
 # decreased synthetic lethal interactions with G13D
-g13d_survival_plot <- model_data %>%
+g13d_survival_plot <- model_data1 %>%
     filter(gene %in% g13d_up) %>%
-    ggplot() +
-    facet_wrap(~ gene, scales = "free") +
-    geom_boxplot(aes(x = ras_allele, y = gene_effect, color = ras_allele),
-                 outlier.shape = NA) +
-    geom_hline(yintercept = 0, size = 0.5, color = "black", linetype = 2) +
-    geom_jitter(aes(x = ras_allele, y = gene_effect, color = ras_allele),
-                size = 0.5, width = 0.2) +
-    scale_color_manual(values = allele_pal) +
-    theme_minimal() +
-    theme(
-        axis.text.x = element_blank(),
-        axis.title.x = element_blank()
-    ) +
-    labs(y = "depletion", color = "RAS allele",
-         title = "Target genes that cause G13D-specific survival",
-         subtitle = "KRAS G13D was a strong predictor for whether the targeting of the indicated gene caused increased survival (relative to other alleles) of the cell line.")
-ggsave(filename = "images/linear_model/G13DvsG12vsWT_lm_survival.png",
-       plot = g13d_survival_plot,
-       width = 10, height = 8, units = "in", dpi = 300)
-
-
-g13d_survival_corrected_plot <- model_data %>%
-    filter(gene %in% g13d_up) %>%
-    left_join(tt, by = "gene") %>%
-    mutate(gene_effect_corrected = gene_effect - WT_est) %>%
-    ggplot(aes(x = ras_allele, y = gene_effect_corrected)) +
+    ggplot(aes(x = ras_allele, y = gene_effect)) +
     facet_wrap(~ gene, scales = "free") +
     geom_boxplot(aes(color = ras_allele),
                  outlier.shape = NA) +
@@ -307,11 +246,10 @@ g13d_survival_corrected_plot <- model_data %>%
     ) +
     labs(y = "depletion", color = "RAS allele",
          title = "Target genes that cause G13D-specific survival",
-         subtitle = "KRAS G13D was a strong predictor for whether the targeting of the indicated gene caused increased survival (relative to other alleles) of the cell line.")
-ggsave(filename = "images/linear_model/G13DvsG12vsWT_lm_survival_corrected.png",
+         subtitle = "KRAS G13D was a significant predictor for whether the targeting of the indicated gene caused increased survival (relative to other alleles) of the cell line.")
+ggsave(filename = "images/linear_model/G13DvsG12vsWT_lm_survival.png",
        plot = g13d_survival_plot,
        width = 10, height = 8, units = "in", dpi = 300)
-
 
 
 #### ---- (2) gene_effect ~ G12 + G13D + mut_target ---- ####
@@ -345,10 +283,10 @@ ggsave(filename = "images/linear_model/G13DvsG12vsWT_lm_survival_corrected.png",
 #### ---- (3) gene_effect ~ WT + G12 + G13D + mut + gene_expr ---- ####
 
 run_linear_model3 <- function(tib, ...) {
-    fit <- try(lm(
+    fit <- lm(
         gene_effect ~ ras_allele + target_is_mutated + gene_expression_norm,
         data = tib
-    ))
+    )
     model_fit <- broom::tidy(fit) %>% janitor::clean_names()
     model_info <- broom::glance(fit) %>% janitor::clean_names()
     res <- list("model_fit" = model_fit,
@@ -357,41 +295,45 @@ run_linear_model3 <- function(tib, ...) {
 }
 
 ccle_gene_expr <- readRDS(file.path("data", "cell_line_gene_expression.tib"))
-model_data_expr <- ccle_gene_expr %>%
+model_data3 <- ccle_gene_expr %>%
     filter(gene %in% unique(model_data$gene)) %>%
     select(gene, dep_map_id, gene_expression) %>%
-    right_join(model_data, by = c("dep_map_id", "gene"))
+    right_join(model_data, by = c("dep_map_id", "gene")) %>%
+    filter(codon == "12" | codon == "WT" | ras_allele == "KRAS_G13D") %>%
+    mutate(
+        ras_allele = ifelse(codon == "12", "KRAS_G12", ras_allele),
+        ras_allele = factor(
+            ras_allele,
+            levels = c("WT", "KRAS_G12", "KRAS_G13D")
+        )
+    ) %>%
+    group_by(gene) %>%
+    filter(!any(is.na(gene_expression))) %>%
+    filter(!all(gene_expression == 0)) %>%
+    mutate(gene_expression_norm = scale(gene_expression)) %>%
+    ungroup()
 
 # run linear model on each gene
-models_expr <- model_data_expr %>%
-    mutate(ras_allele = factor(
-        ras_allele,
-        levels = c("WT", "KRAS_G12", "KRAS_G13D")
-    )) %>%
+models3 <- model_data3 %>%
     group_by(gene) %>%
-    mutate(gene_expression_norm = scale(gene_expression)) %>%
-    mutate(gene_expression_norm = ifelse(
-        is.na(gene_expression_norm), 0, gene_expression_norm
-    )) %>%
     nest() %>%
     mutate(linear_model = map(data, run_linear_model3))
 
-model_expr_open <- models_expr %>%
-    mutate(model_fit = map(linear_model, ~ .x$model_fit),
-           model_info = map(linear_model, ~ .x$model_info)) %>%
-    select(-linear_model) %>%
-    unnest(model_info) %>%
-    unnest(model_fit) %>%
-    mutate(term = ifelse(term == "(Intercept)", "WT", term),
-           term = ifelse(term == "ras_alleleKRAS_G12", "KRAS_G12", term),
-           term = ifelse(term == "ras_alleleKRAS_G13D", "KRAS_G13D", term),
-           term = ifelse(term == "target_is_mutatedTRUE", "target_is_mutated", term)) %>%
-    dplyr::rename(p_value_model = "p_value",
-                  p_value_fit = "p_value1") %>%
+models3_open <- unnest_model_results(models3) %>%
+    mutate(
+        term = ifelse(term == "(Intercept)", "WT", term),
+        term = ifelse(term == "ras_alleleKRAS_G12", "KRAS_G12", term),
+        term = ifelse(term == "ras_alleleKRAS_G13D", "KRAS_G13D", term),
+        term = ifelse(
+            term == "target_is_mutatedTRUE", "target_is_mutated", term
+        )
+    ) %>%
     mutate(q_value_model = p.adjust(p_value_model, method = "BH"))
 
+
+# VISUALIZATION
 # volcano
-expr_volcano <- model_expr_open %>%
+g13d_volcano_plot3 <- models3_open %>%
     filter(term == "KRAS_G13D") %>%
     mutate(
         point_color = ifelse(
@@ -414,36 +356,205 @@ expr_volcano <- model_expr_open %>%
     scale_y_continuous(expand = expand_scale(mult = c(0, 0.05))) +
     theme_bw() +
     labs(x = "KRAS G13D effect", y = "-log( p-value )", color = "effect",
-         title = "Effect of KRAS G13D on the depletion effect of genetic KO")
-ggsave(filename = "images/linear_model/expr_volcano_plot.png",
-       plot = expr_volcano,
+         title = "Effect of KRAS G13D on the depletion effect of genetic KO",
+         subtitle = "Highlighted genes had a significant model, KRAS G13D fit, and an estimate with magnitude greater than 0.2")
+ggsave(filename = "images/linear_model/g13d_volcano_plot3.png",
+       plot = g13d_volcano_plot3,
        width = 8, height = 6, units = "in", dpi = 300)
 
-# TODO:
+# G12 vs G13D volcano plot
+volcano_plot3 <- models3_open %>%
+    filter(gene != "KRAS") %>%
+    filter(str_detect(term, "KRAS")) %>%
+    mutate(ras_allele = term) %>%
+    select(gene, ras_allele, estimate, p_value_model) %>%
+    spread(ras_allele, estimate) %>%
+    mutate(diff_estimate = KRAS_G12 - KRAS_G13D) %>%
+    mutate(
+        point_color = ifelse(
+            diff_estimate < -0.2 & p_value_model < 0.05, "KRAS_G12", NA
+        ), point_color = ifelse(
+            diff_estimate > 0.2 & p_value_model < 0.05, "KRAS_G13D", point_color
+        ), label = ifelse(
+            !is.na(point_color), gene, ""
+        )
+    ) %>%
+    ggplot(aes(x = diff_estimate, y = -log(p_value_model))) +
+    geom_point(aes(color = point_color), size = 0.8) +
+    geom_vline(xintercept = 0, color = "grey20", size = 0.5, linetype = 2) +
+    ggrepel::geom_text_repel(aes(label = label), size = 2, color = "grey20") +
+    scale_color_manual(values = c(allele_pal, "not_sig" = "grey60"),
+                       na.value = "grey70") +
+    scale_x_continuous(limits = c(-0.45, 0.45)) +
+    scale_y_continuous(expand = expand_scale(mult = c(0, 0.05))) +
+    theme_bw() +
+    theme(
+        legend.position = c(0.85, 0.85),
+        legend.background = element_blank(),
+    ) +
+    labs(x = "difference in estimate", y = "-log( p-value of model )",
+         color = "largest effect",
+         title = "Difference in effect size of KRAS G12 KRAS G13D",
+         subtitle = "Highlighted genes had statistically significant models and a difference in estimate with magnitude of at least 0.2")
+ggsave(filename = "images/linear_model/model3_volcano_plot.png",
+       plot = volcano_plot3,
+       width = 8, height = 6, units = "in", dpi = 300)
+
+
+G12vsG13D_scatter3 <- models3_open %>%
+    filter(gene != "KRAS") %>%
+    filter(str_detect(term, "KRAS")) %>%
+    mutate(ras_allele = term) %>%
+    select(gene, ras_allele, estimate, q_value_model) %>%
+    spread(ras_allele, estimate) %>%
+    mutate(diff_estimate = KRAS_G12 - KRAS_G13D) %>%
+    mutate(point_color = ifelse(
+        diff_estimate < -0.2 & q_value_model < 0.2, "KRAS_G12", NA
+    )) %>%
+    mutate(point_color = ifelse(
+        diff_estimate > 0.2 & q_value_model < 0.2, "KRAS_G13D", point_color
+    )) %>%
+    mutate(label = ifelse(!is.na(point_color), gene, "")) %>%
+    ggplot(aes(x = KRAS_G12, y = KRAS_G13D)) +
+    geom_point(aes(color = point_color)) +
+    geom_abline(slope = 1, intercept = 0,
+                color = "grey20", linetype = 2, size = 1) +
+    ggrepel::geom_text_repel(aes(label = label), size = 2, color = "grey20") +
+    scale_color_manual(values = c(allele_pal, "not_sig" = "grey60"),
+                       na.value = "grey70", guide = FALSE) +
+    coord_fixed(ratio = 1,
+                xlim = c(-0.35, 0.35), ylim = c(-0.35, 0.35)) +
+    theme_bw() +
+    labs(x = "KRAS G12 effect", y = "KRAS G13D effect")
+ggsave(filename = "images/linear_model/G12vsG13D_scatter3.png",
+       plot = G12vsG13D_scatter3,
+       width = 7, height = 7, units = "in", dpi = 300)
 
 # increased synthetic lethal interactions with G13D
-g13d_depletion_plot2 <- model_expr_open %>%
-    filter(q_value_model < 0.2) %>%
-
-
+g13d_depletion_plot3 <- models3_open %>%
+    filter(
+        q_value_model < 0.2 &
+        term == "KRAS_G13D" &
+        estimate < -0.15 &
+        p_value_fit < 0.05
+    ) %>%
+    select(gene) %>%
+    left_join(model_data3, by = "gene") %>%
     ggplot(aes(x = ras_allele, y = gene_effect)) +
     facet_wrap(~ gene, scales = "free") +
-    geom_boxplot(aes(color = ras_allele), outlier.shape = NA) +
+    geom_boxplot(aes(color = ras_allele), outlier.shape = NA, lwd = 0.5) +
     geom_hline(yintercept = 0, size = 0.5, color = "black", linetype = 2) +
-    geom_jitter(aes(color = ras_allele), size = 0.5, width = 0.2) +
+    geom_jitter(aes(color = ras_allele), size = 0.3, width = 0.2) +
     scale_color_manual(values = allele_pal) +
     theme_minimal() +
     theme(
         axis.text.x = element_blank(),
-        axis.title.x = element_blank()
+        axis.title.x = element_blank(),
+        axis.text.y = element_text(size = 6),
+        strip.text = element_text(size = 8)
     ) +
     labs(y = "depletion", color = "RAS allele",
          title = "Target genes that cause G13D-specific depletion",
-         subtitle = "KRAS G13D was a strong predictor for whether the targeting of the indicated gene caused depletion of the cell line.")
-ggsave(filename = "images/linear_model/G13DvsG12vsWT_lm_depletion.png",
-       plot = g13d_depletion_plot,
-       width = 10, height = 8, units = "in", dpi = 300)
+         subtitle = "KRAS G13D was a significant predictor for whether the targeting of the indicated gene caused depletion of the cell line.")
+ggsave(filename = "images/linear_model/model3_G13Ddepletion.png",
+       plot = g13d_depletion_plot3,
+       width = 10, height = 8, units = "in", dpi = 200)
 
+# decreased synthetic lethal interactions with G13D
+g13d_survival_plot3 <- models3_open %>%
+    filter(
+        q_value_model < 0.2 &
+        term == "KRAS_G13D" &
+        estimate > 0.15 &
+        p_value_fit < 0.05
+    ) %>%
+    select(gene) %>%
+    left_join(model_data3, by = "gene") %>%
+    ggplot(aes(x = ras_allele, y = gene_effect)) +
+    facet_wrap(~ gene, scales = "free") +
+    geom_boxplot(aes(color = ras_allele), outlier.shape = NA, lwd = 0.5) +
+    geom_hline(yintercept = 0, size = 0.5, color = "black", linetype = 2) +
+    geom_jitter(aes(color = ras_allele), size = 0.3, width = 0.2) +
+    scale_color_manual(values = allele_pal) +
+    theme_minimal() +
+    theme(
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.y = element_text(size = 6),
+        strip.text = element_text(size = 8)
+    ) +
+    labs(y = "depletion", color = "RAS allele",
+         title = "Target genes that cause G13D-specific depletion",
+         subtitle = "KRAS G13D was a significant predictor for whether the targeting of the indicated gene had reduced depletion of the cell line.")
+ggsave(filename = "images/linear_model/model3_G13Dsurvival.png",
+       plot = g13d_survival_plot3,
+       width = 10, height = 8, units = "in", dpi = 200)
+
+# effects of gene expression
+expression_sigs <- models3_open %>%
+    filter(
+        q_value_model < 0.2 &
+        term == "gene_expression_norm" &
+        p_value_fit < 0.05 &
+        abs(estimate) > 0.15
+    ) %>%
+    pull(gene) %>% unlist() %>% unique()
+models3_intercept <- models3_open %>%
+    filter(term == "WT") %>%
+    dplyr::rename(intercept = "estimate") %>%
+    select(gene, intercept)
+expresseioneffect_3 <- models3_open %>%
+    filter(gene %in% !!expression_sigs & term == "gene_expression_norm") %>%
+    select(gene, estimate) %>%
+    unique() %>%
+    left_join(models3_intercept, by = "gene") %>%
+    left_join(model_data3, by = "gene") %>%
+    ggplot(aes(x = gene_expression_norm, y = gene_effect)) +
+    facet_wrap(~ gene, scales = "free") +
+    geom_point(aes(color = ras_allele), size = 0.8) +
+    geom_abline(aes(slope = estimate, intercept = intercept)) +
+    scale_color_manual(values = allele_pal) +
+    theme_classic() +
+    theme(legend.position = c(0.9, 0.15)) +
+    labs(x = "gene expression (scaled)", y = "depletion effect",
+         title = "Gene expression levels that trend with depletion effect")
+ggsave(filename = "images/linear_model/expresseioneffect_3.png",
+       plot = expresseioneffect_3,
+       width = 10, height = 6, units = "in", dpi = 300)
+
+
+
+# TODO: which genes was expression or mutation status a string predictor
+# plot: x = mutated (T,F), y = gene effect
+models3_open %>%
+    filter(
+        q_value_model < 0.2 &
+        term == "target_is_mutated" &
+        p_value_fit < 0.05 &
+        abs(estimate) > 0.15
+    ) %>%
+    select(gene, estimate) %>%
+    unique() %>%
+    left_join(models3_intercept, by = "gene") %>%
+    left_join(model_data3, by = "gene") %>%
+    group_by(gene) %>%
+    filter(sum(target_is_mutated) > 3) %>%
+    ungroup() %>%
+    mutate(target_is_mutated = ifelse(target_is_mutated, "Mut", "Wt")) %>%
+    ggplot(aes(x = target_is_mutated, y = gene_effect)) +
+    facet_wrap(~ gene, scales = "free") +
+    geom_hline(yintercept = 0, size = 0.5, color = "black", linetype = 2) +
+    geom_boxplot(aes(color = target_is_mutated), outlier.shape = NA, lwd = 0.5) +
+    geom_jitter(aes(color = ras_allele), width = 0.2, height = 0, size = 0.7) +
+    scale_color_manual(values = c(
+            allele_pal, "Mut" = "aquamarine3", "Wt" = "aquamarine4"
+        ), guide = FALSE
+    ) +
+    theme_bw() +
+    theme(
+        axis.title.x = element_blank(),
+        strip.background = element_blank()
+    )
 
 
 #### ---- Specific Follow-up ---- ####
