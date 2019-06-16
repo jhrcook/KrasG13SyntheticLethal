@@ -129,7 +129,7 @@ The plot shows target genes that had a significantly stronger depletion effect i
 
 The plot below compares the coefficients fit to *KRAS* G12 (x-axis) and G13D (y-axis). Values that lie along the dashed line showed no difference in depletion effects between the two mutant *KRAS* groups. The highlighted genes had significant models (q_value < 0.20) and a difference in coefficients of 0.2 in magnitude. 
 
-![](images/linear_model/model3_G13Dsurvival.png)
+![](images/linear_model/G12vsG13D_scatter3.png)
 
 ### Effects of gene expression
 
@@ -166,6 +166,8 @@ The following plots have the same layout as in previous models, so are not speci
 I looked at the frequency of co-mutation of the genes identified by the linear model with *KRAS* G12, *KRAS* G13D, and WT in human tumor samples from COAD, LUAD, and PAAD. Below is a heatmap colored by co-mutation frequency. The numbers in the cells indicate the number of co-mutation events.
 
 ![](images/linear_model/comut_heatmap.png)
+
+![](images/linear_model/comut_heatmap_rescaled.png)
 
 ---
 
