@@ -75,6 +75,7 @@ They are not normally distributed. Instead, most of the values lie near 0, indic
 
 (Analysis conducted in `subscripts/linear_model.R`.)
 
+
 ## *KRAS* G13D vs *KRAS* G12 vs. WT and target gene mutation {.tabset}
 
 ### The model
@@ -83,25 +84,31 @@ The first attempt at modeling the data used a standard linear model to estimate 
 
 Cell lines were not used if they had multiple *KRAS* mutations or a mutation in *NRAS* or *A/B/CRAF*.
 
+### Volcano plot of *KRAS* G12 - G13D estimate
+
 The volcano plot below shows the difference in the estimates for *KRAS* G12 and *KRAS* G13D and the log-transformed BH FDR-adjusted p-value (q-value) of the model. The labeled genes had a model q-value less than 0.20 and a difference in estimate of magnitude greater than 0.2. The points to the left (blue) had a stronger depletion effect in *KRAS* G12 mutants where the points to the right (red) had a stronger depletion effect in *KRAS* G13D.
 
-![](images/linear_model/model1_volcano_plot.png)
+![](images/linear_model/model1_DiffEstimateVolcano_plot.png)
 
-### G13D-specific depletion
+The genes with very low model q-values but little difference between *KRAS* G12 and G13D estimates (middle of the x-axis and high on the y-axis) were likely highly predicted by the WT covariate (i.e. the gene effect did not change much according to the *RAS* allele) or mutational status.
+
+### Genes with increased depletion with *KRAS* G13D
 
 The plot shows target genes that had a significantly stronger depletion effect in *KRAS* G13D cell lines. These genes showed increased depletion in *KRAS* G13D cell lines, had a model q-value below 0.20, and a p-value for the G13D covariate below 0.05.
 
-![](images/linear_model/model1_G13Ddepletion.png)
+![](images/linear_model/model1_G13dDepletion_plot.png)
 
-### G13D-specific survival
+### Genes with decreased depletion with *KRAS* G13D
 
 On the other hand, the following plot shows target genes that had a significantly stronger *survival* effect (relative to the other alleles tested) in *KRAS* G13D cell lines. I use the term "survival" here due to a lack of a better option, but "reduced synthetic lethality" or "reduced depletion effect" may be more accurate.
 
-![](images/linear_model/model1_G13Dsurvival.png)
+![](images/linear_model/model1_G13dSurvival.png)
+
 
 ## Only G12 and G13D
 
 I have additionally fit the same model without WT samples, thus the intercept was the *KRAS* G12 effect and other covariates were *KRAS* G13D and mutational status of the target. Looking at the target genes that could be modeled and how their results compare to the previous version of the model (with WT), they do not capture any new effects. I believe including the WT as the intercept is a logical inclusion.
+
 
 ## Including gene expression of the target gene {.tabset}
 
@@ -111,31 +118,37 @@ I ran the same model as before, including *KRAS* WT, G12, and G13D and whether t
 
 The following plot is a volcano with the *KRAS* G13D effect on the x-axis and log-transformed p-value of the *KRAS* G13D coefficient on the y-axis. The highlighted genes had an overall model q-value below 0.20, *KRAS* G13D p-value below 0.05, and a *KRAS* G13D estimate of magnitude greater than 0.20.
 
-![](images/linear_model/g13d_volcano_plot3.png)
+![](images/linear_model/model3_G13dVolcano_plot.png)
 
-### Genes with increased depletion with *KRAS* G13D
+### Volcano plot of *KRAS* G12 - G13D estimate
 
-The plot shows target genes that had a significantly stronger depletion effect in *KRAS* G13D cell lines. These genes showed increased depletion in *KRAS* G13D cell lines, had a model q-value below 0.20, and a p-value for the G13D covariate below 0.05.
+The volcano plot below shows the difference in the estimates for *KRAS* G12 and *KRAS* G13D and the log-transformed BH FDR-adjusted p-value (q-value) of the model. The labeled genes had a model q-value less than 0.20 and a difference in estimate of magnitude greater than 0.2. The points to the left (blue) had a stronger depletion effect in *KRAS* G12 mutants where the points to the right (red) had a stronger depletion effect in *KRAS* G13D.
 
-![](images/linear_model/model3_G13Ddepletion.png)
-
-### Genes with decreased depletion with *KRAS* G13D
-
-The plot shows target genes that had a significantly stronger depletion effect in *KRAS* G13D cell lines. These genes showed increased depletion in *KRAS* G13D cell lines, had a model q-value below 0.20, and a p-value for the G13D covariate below 0.05.
-
-![](images/linear_model/model3_G13Dsurvival.png)
+![](images/linear_model/model3_DiffEstimateVolcano_plot.png)
 
 ### Comparing coefficients of *KRAS* G12D and G13D
 
 The plot below compares the coefficients fit to *KRAS* G12 (x-axis) and G13D (y-axis). Values that lie along the dashed line showed no difference in depletion effects between the two mutant *KRAS* groups. The highlighted genes had significant models (q_value < 0.20) and a difference in coefficients of 0.2 in magnitude. 
 
-![](images/linear_model/G12vsG13D_scatter3.png)
+![](images/linear_model/model3_G12VsG13dScatter_plot.png)
+
+### Genes with increased depletion with *KRAS* G13D
+
+The plot shows target genes that had a significantly stronger depletion effect in *KRAS* G13D cell lines. These genes showed increased depletion in *KRAS* G13D cell lines, had a model q-value below 0.20, and a p-value for the G13D covariate below 0.05.
+
+![](images/linear_model/model3_G13dDepletion_plot.png)
+
+### Genes with decreased depletion with *KRAS* G13D
+
+The plot shows target genes that had a significantly stronger depletion effect in *KRAS* G13D cell lines. These genes showed increased depletion in *KRAS* G13D cell lines, had a model q-value below 0.20, and a p-value for the G13D covariate below 0.05.
+
+![](images/linear_model/model3_G13dSurvival_plot.png)
 
 ### Effects of gene expression
 
 The following plots show the trend of gene expression with depletion score for models found to have a significant coefficient and estimate (slope) of at least 0.15 in magnitude.
 
-![](images/linear_model/expresseioneffect_3.png)
+![](images/linear_model/expresseion_effect_3.png)
 
 ### Effect of mutational status of the target gene
 
@@ -143,29 +156,58 @@ Inspecting the target genes that had statistically significant coefficients for 
 
 ![](images/linear_model/mutation_effect_3.png)
 
+
 ## Conditional mutational status {.tabset}
 
 From the previous observation that some models were fitting significant and relatively large coefficients to the mutational status covariate when only couple of cell lines had a mutation, I restricted the inclusion of this covariate to models of genes mutated in at least four cell lines. 
 
 The following plots have the same layout as in previous models, so are not specifically explained in each tab.
 
+### Volcano plot of *KRAS* G12 - G13D estimate
+
+![](images/linear_model/model4_DiffEstimateVolcano_plot.png)
+
+### Comparing coefficients of *KRAS* G12 and G13D
+
+![](images/linear_model/model4_G12VsG13dScatter_plot.png)
+
 ### Genes with increased depletion with *KRAS* G13D
 
-![](images/linear_model/model4_G13Ddepletion.png)
+![](images/linear_model/model4_G13dDepletion_plot.png)
 
 ### Genes with decreased depletion with *KRAS* G13D
 
-![](images/linear_model/model4_G13Dsurvival.png)
+![](images/linear_model/model4_G13dSurvival_plot.png)
 
-### Comparing coefficients of *KRAS* G12D and G13D
 
-![](images/linear_model/G12vsG13D_scatter4.png)
+## Only comparing *KRAS* G12D to G13D {.tabset}
+
+Instead of including all codon 12 *KRAS* mutants in one group, the following model is the same as used in the previous section, though only using *KRAS* G12D. This may reduce variability of the codon 12 group if the various allele that constitute it are quite different.
+
+### Volcano plot of *KRAS* G12D - G13D estimate
+
+![](images/linear_model/model5_DiffEstimateVolcanoTiled_plot.png)
+
+### Comparing coefficients of *KRAS* G12 and G13D
+
+![](images/linear_model/model5_G12VsG13dScatter_plot.png)
+
+### Genes with increased depletion with *KRAS* G13D
+
+![](images/linear_model/model5_G13dDepletion_plot.png)
+
+### Genes with decreased depletion with *KRAS* G13D
+
+![](images/linear_model/model5_G13dSurvival_plot.png)
+
 
 ## Additional Analysis of hits
 
 I looked at the frequency of co-mutation of the genes identified by the linear model with *KRAS* G12, *KRAS* G13D, and WT in human tumor samples from COAD, LUAD, and PAAD. Below is a heatmap colored by co-mutation frequency. The numbers in the cells indicate the number of co-mutation events.
 
 ![](images/linear_model/comut_heatmap.png)
+
+The following heatmap has the same information, however the fill color indicates the co-mutation frequency scaled from 0 to 1 for each gene individually. This gives an indication of the relative rates of co-mutation for each gene.
 
 ![](images/linear_model/comut_heatmap_rescaled.png)
 
