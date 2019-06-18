@@ -24,7 +24,7 @@ double_muts <- ras_muts %>%
     filter(n > 1) %>%
     pull(dep_map_id)
 
-# KRAS G13D or G12 (codon 12 mutants)
+# KRAS mutants
 kras_muts <- ras_muts %>%
     filter(disease %in% names(!!organs_pal)) %>%
     filter(ras == "KRAS" & !(dep_map_id %in% double_muts)) %>%
@@ -103,6 +103,8 @@ model_data1 <- model_data %>%
         ras_allele,
         levels = c("WT", "KRAS_G12", "KRAS_G13D")
     ))
+saveRDS(model_data1, "model_results/linear_model_1_data.rds")
+
 
 model_data1 %>%
     select(dep_map_id, ras_allele) %>%
@@ -132,6 +134,7 @@ models1 <- model_data1 %>%
     mutate(linear_model = map(data, run_linear_model1))
 
 models1_open <- unnest_model_results(models1)
+saveRDS(models1_open, "model_results/linear_model_1.rds")
 g13d_sigs <- models1_open %>%
     filter(q_value_model < 0.2) %>%
     filter(term == "ras_alleleKRAS_G13D" & p_value_fit < 0.05)
@@ -272,6 +275,8 @@ model_data3 <- ccle_gene_expr %>%
     filter(!all(gene_expression == 0)) %>%
     mutate(gene_expression_norm = scale(gene_expression)) %>%
     ungroup()
+saveRDS(model_data3, "model_results/linear_model_3_data.rds")
+
 
 # run linear model on each gene
 models3 <- model_data3 %>%
@@ -288,6 +293,7 @@ models3_open <- unnest_model_results(models3) %>%
             term == "target_is_mutatedTRUE", "target_is_mutated", term
         )
     )
+saveRDS(models3_open, "model_results/linear_model_3.rds")
 
 # VISUALIZATION
 
@@ -503,6 +509,8 @@ models4_open <- unnest_model_results(models4) %>%
             term == "target_is_mutatedTRUE", "target_is_mutated", term
         )
     )
+saveRDS(models4_open, "model_results/linear_model_4.rds")
+
 
 # VISUALIZATION
 
@@ -610,6 +618,7 @@ model_data5 <- ccle_gene_expr %>%
     filter(!all(gene_expression == 0)) %>%
     mutate(gene_expression_norm = scale(gene_expression)) %>%
     ungroup()
+saveRDS(model_data5, "model_results/linear_model_5_data.rds")
 
 models5 <- model_data5 %>%
     group_by(gene) %>%
@@ -624,8 +633,10 @@ models5_open <- unnest_model_results(models5) %>%
         term = ifelse(
             term == "target_is_mutatedTRUE", "target_is_mutated", term
         )
-    ) %>%
-    mutate(q_value_model = p.adjust(p_value_model, method = "BH"))
+    )
+saveRDS(models5_open, "model_results/linear_model_5.rds")
+
+
 
 # VISUALIZATION
 
@@ -810,29 +821,3 @@ comut_heatmap_rescaled <- gene_comuts %>%
 ggsave(filename = "images/linear_model/comut_heatmap_rescaled.png",
        plot = comut_heatmap_rescaled,
        width = 11, height = 4, units = "in", dpi = 300)
-# # gene expression of the CCLE cell lines
-# ccle_gene_expr <- readRDS(file.path("data", "cell_line_gene_expression.tib"))
-
-# ccle_gene_expr %>%
-#     filter(gene %in% c(g13d_down) & disease %in% names(organs_pal)) %>%
-#     left_join(kras_muts_select, by = "dep_map_id") %>%
-#     mutate(ras_allele = ifelse(is.na(ras_allele), "WT", ras_allele)) %>%
-#     filter(str_detect(ras_allele, "12") | ras_allele %in% c("WT", "KRAS_G13D")) %>%
-#     mutate(ras_allele_grp = ifelse(
-#         str_detect(ras_allele, "12"),
-#         "KRAS_G12", ras_allele
-#     )) %>%
-#     mutate(up_down = ifelse(
-#         gene %in% g13d_down, "G13D depletion", "G13D survival"
-#     )) %>%
-#     ggplot(aes(x = ras_allele_grp, y = gene_expression)) +
-#     facet_wrap( ~ gene, scales = "free") +
-#     geom_boxplot(aes(color = ras_allele_grp),
-#                  outlier.shape = NA) +
-#     geom_jitter(aes(color = ras_allele_grp), width = 0.2, size = 0.5) +
-#     scale_color_manual(values = allele_pal) +
-#     theme_minimal() +
-#     theme(
-#         axis.text.x = element_blank(),
-#         axis.title.x = element_blank()
-#     )
