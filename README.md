@@ -201,7 +201,9 @@ Instead of including all codon 12 *KRAS* mutants in one group, the following mod
 ![](images/linear_model/model5_G13dSurvival_plot.png)
 
 
-## Additional Analysis of hits
+## Additional Analysis of hits {.tabset}
+
+### Co-mutation in human tumors
 
 I looked at the frequency of co-mutation of the genes identified by the linear model with *KRAS* G12, *KRAS* G13D, and WT in human tumor samples from COAD, LUAD, and PAAD. Below is a heatmap colored by co-mutation frequency. The numbers in the cells indicate the number of co-mutation events.
 
@@ -210,6 +212,45 @@ I looked at the frequency of co-mutation of the genes identified by the linear m
 The following heatmap has the same information, however the fill color indicates the co-mutation frequency scaled from 0 to 1 for each gene individually. This gives an indication of the relative rates of co-mutation for each gene.
 
 ![](images/linear_model/comut_heatmap_rescaled.png)
+
+
+### Overlap with Alex@UCSF
+
+I compared the genes identified in this analysis to those identified by Alex from UCSF.
+
+
+
+# Predicting *KRAS* mutation using depletion effects {.tabset}
+
+Instead of using the mutational status of *KRAS* to explain the depletion effect of each targeted gene in a separate model, I tried to predict the status of *KRAS* using all of the depletion scores in one model.
+
+## LASSO-regularized regression
+
+I tried LASSO and Ridge for penalized regression and found that the strong effects of LASSO were preferable due the high dimensionality of the problem. I began by just using LASSO to predict whether a cell line would have WT or mutant *KRAS*. Below are the genes with non-zero effects (not including the effect of knocking-out *KRAS*).
+
+![](images/predict_rasallele/lasso4_model_min_coefs_plot.png)
+
+The following box-plots show the depletion effects in mutant and WT *KRAS* cell lines for the identified genes.
+
+![](images/predict_rasallele/lasso4_model_min_boxplot.png)
+
+For comparison, I ran a standard linear model for each gene using *KRAS* as the only predictor, limited to WT or mutated. The following volcano plot shows where the LASSO-identified genes fall in the spectrum of results obtained from this modeling. None met the criteria used in the previous section of this analysis: model q-value < 0.20, coefficient p-value < 0.05, and magnitude of coeffcient > 0.15.
+
+![](images/predict_rasallele/predict_rasallele_linear_model_volcano.png)
+
+## Random Forrest Classifier
+
+I tried using a random forest classifier to classify whether KRAS was WT or mutated in a cell line based off of the depletion effects of all genes, but this had poor accuracy (around 50%). 
+
+I did not pursue this any further.
+
+## Conclusion
+
+Using machine learning algorithms requires the split of the data into testing and training data sets. Due to the relatively low number of *KRAS* G13D samples, these methods are not applicable for an allele-specific analysis.
+
+Still, the LASSO-regularized linear regression on *KRAS* mutational status was interesting and may have identified a few avenues of further exploration.
+
+
 
 ---
 
