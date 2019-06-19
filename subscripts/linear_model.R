@@ -79,7 +79,7 @@ model_data <- dep_map %>%
     select(dep_map_id, gene, gene_effect, disease) %>%
     left_join(kras_muts, by = "dep_map_id") %>%
     group_by(gene) %>%
-    filter(any(gene_effect <= -0.4)) %>%
+    filter(any(gene_effect <= -0.25)) %>%
     ungroup() %>%
     left_join(ccle_muts_select, by = c("dep_map_id", "gene")) %>%
     mutate(
