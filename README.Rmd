@@ -87,7 +87,7 @@ They are not normally distributed. Instead, most of the values lie near 0, indic
 
 ### The model
 
-The first attempt at modeling the data used a standard linear model to estimate the depletion effect given the *KRAS* allele and mutation status of the target gene. The model had two covariates, *KRAS* allele and the mutational status of the target gene (binary). The alleles were grouped as *KRAS* codon 12, *KRAS* G13D, or WT. Only genes that caused a depletion to -0.5 or lower in at least one cell line were used.
+The first attempt at modeling the data used a standard linear model to estimate the depletion effect given the *KRAS* allele and mutation status of the target gene. The model had two covariates, *KRAS* allele and the mutational status of the target gene (binary). The alleles were grouped as *KRAS* codon 12, *KRAS* G13D, or WT. Only genes that caused a depletion to -0.25 or lower in at least one cell line were used.
 
 Cell lines were not used if they had multiple *KRAS* mutations or a mutation in *NRAS* or *A/B/CRAF*.
 
@@ -220,12 +220,29 @@ The following heatmap has the same information, however the fill color indicates
 
 ![](images/linear_model/comut_heatmap_rescaled.png)
 
+### Functional enrichment
+
+I used the ['enrichR'](https://cran.r-project.org/web/packages/enrichR/index.html) package to identify functionalities enriched in the genes that had G13D-specific genetic dependencies. The bar-plot below shows the identified functions along the y-axis and the corresponding p-value along the x-axis. The fraction at the end of each bar is the fraction of genes associated with the term that are in the list. The genes along the bar are those genes.
+
+![](images/hit_annotation/fxnal_anno_plot.png)
+
+### PPI subnetwork
+
+I extracted the subnetwork of the protein-protein interaction network (source: [High-quality INTeractomes database](http://hint.yulab.org); nodes = genes, edges = physical interactions) that contained most of the genes that had G13D-specific genetic dependencies and any other nodes that are connected to at least three of the identified genes. The two plots below show the same nodes, but the second only includes the physical interactions with the identified genes.
+
+The thickness of the edge indicates the how many of the nodes it connects were from the genetic dependency analysis (either "both", "one", or "neither"). The color of the node indicates the coefficient; a positive coefficient (red) indicates that the targeting of the gene was predictive of *reduced* lethality, and blue the opposite. The size of the node indicates its centrality in the network (an indicator of importance).
+
+![](images/hit_annotation/dep_ppi_plot.png)
+
+![](images/hit_annotation/dep_filtedges_ppi_plot.png)
 
 ### Overlap with Alex (UCSF)
 
-I compared the genes identified in this analysis to those identified by Alex from UCSF.
+I compared the genes identified in this analysis to those identified by Alex from UCSF. There was no overlap between the genes identified by DGE (q-value 0.05 and log-fold change > 2) and modeling G13D-specific dependencies (model q-value < 0.2, coefficient p-value < 0.05, coefficient of magnitude > 0.15).
 
+The following figure is the volcano plot of the G13D coefficient against its p-value. The blue point are genes signficantly differentially expressed in any of the mouse model DGE comparisons. The top slection of those are labeled.
 
+![](images/overlap_alex/comparison_volcano.png)
 
 # Predicting *KRAS* mutation using depletion effects {.tabset}
 
