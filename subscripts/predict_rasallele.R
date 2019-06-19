@@ -295,110 +295,6 @@ mean(y_predicted == test_data$ras_allele)
 # conclusion, LASSO regularization is necessary
 
 
-#### ---- Comparison to standard linear model ---- ####
-
-# fit a linear model for each gene
-run_linear_model1 <- function(tib, ...) {
-    fit <- lm(gene_effect ~ ras_allele, data = tib)
-    model_fit <- broom::tidy(fit) %>% janitor::clean_names()
-    model_info <- broom::glance(fit) %>% janitor::clean_names()
-    res <- list(
-        "model_fit" = model_fit,
-        "model_info" = model_info
-    )
-    return(res)
-}
-
-# linear model of gene effect using KRAS (WT vs M)
-linear_model <- model_data %>%
-    mutate(ras_allele = ifelse(ras_allele == "WT", "WT", "M"),
-           ras_allele = factor(ras_allele, levels = c("WT", "M"))) %>%
-    group_by(gene) %>%
-    nest() %>%
-    mutate(linear_model = map(data, run_linear_model1))
-
-linear_model_open <- unnest_model_results(linear_model)
-saveRDS(linear_model_open,
-        file.path("model_results", "predict_rasallele_linear_models.rds"))
-
-# significantly modeled genes
-linear_model_open_sig <- linear_model_open %>%
-    filter(
-        term == "ras_alleleM" &
-        q_value_model < 0.2 &
-        p_value_fit < 0.05 &
-        abs(estimate) > 0.2
-    ) %>%
-    arrange(q_value_model, p_value_fit, desc(abs(estimate)))
-
-# boxplots of gene effects of significant linear models
-linear_model_boxplot <- model_data %>%
-    filter(gene %in% linear_model_open_sig$gene) %>%
-    mutate(ras_mut = ifelse(ras_allele == "WT", "WT", "M")) %>%
-    ggplot(aes(x = ras_mut, y = gene_effect)) +
-    facet_wrap(~ gene, scales = "free") +
-    geom_hline(yintercept = 0, size = 0.5, color = "black", linetype = 2) +
-    geom_boxplot(aes(color = ras_mut), outlier.shape = NA) +
-    geom_jitter(color = "grey50", size = 0.6, width = 0.2, height = 0) +
-    scale_color_manual(values = c(WT = "mediumpurple1", M = "aquamarine4")) +
-    theme_bw() +
-    theme(
-        legend.position = "none",
-        axis.title.x = element_blank(),
-        strip.background = element_blank()
-    ) +
-    labs(
-        y = "depletion effect",
-        title = "Genetic dependencies of genes that are the best predictors of KRAS mutations",
-        subtitle = paste0(
-           "using a linear model estimation for depletion effect with KRAS mutation as the predictor"
-        )
-    )
-ggsave(
-    filename = file.path(
-        "images", "predict_rasallele",
-        "predict_rasallele_linear_model_boxplot.png"
-    ), plot = linear_model_boxplot,
-    width = 8, height = 6, units = "in", dpi = 300
-)
-
-
-# overlap of lm and LASSO
-model_intersect <- intersect(
-    linear_model_open_sig$gene, lasso1_model_min_coefs$target_gene
-)
-#> "KRAS"
-
-# volcano of LASSO-genes' results in linear model
-linear_model_volcano <- linear_model_open %>%
-    filter(gene %in% lasso1_model_min_coefs$target_gene) %>%
-    filter(term == "ras_alleleM") %>%
-    ggplot(aes(x = estimate, y = -log(p_value_fit))) +
-    geom_vline(xintercept = 0, size = 0.5, color = "grey25", linetype = 2) +
-    geom_point(aes(size = -log(q_value_model), color = -log(q_value_model))) +
-    ggrepel::geom_text_repel(aes(label = gene), size = 2) +
-    scale_x_continuous(limits = c(-1, 1)) +
-    scale_y_continuous(expand = expand_scale(mult = c(0, 0.05))) +
-    scale_color_gradient(low = "grey70", high = "grey10") +
-    scale_size_continuous(range = c(0.7, 3)) +
-    theme_bw() +
-    theme(plot.title = element_text(hjust = 0.5)) +
-    labs(
-        x = "estimate",
-        y = "-log( p-value of mutant KRAS )",
-        color = "-log( model q-value )",
-        size = "-log( model q-value )",
-        title = "Linear model results for genes identified by LASSO",
-        subtitle = "only KRAS was also identified by the standard linear model"
-    )
-ggsave(
-    filename = file.path(
-        "images", "predict_rasallele",
-        "predict_rasallele_linear_model_volcano.png"
-    ), plot = linear_model_volcano,
-       width = 10, height = 8, units = "in", dpi = 300
-)
-
 #### ---- (4) LASSO without KRAS ---- ####
 # same as (1) just without KRAS as a predictor
 
@@ -532,11 +428,6 @@ ggsave(
        width = 10, height = 8, units = "in", dpi = 300
 )
 
-# overlap of lm and LASSO
-model_intersect <- intersect(
-    linear_model_open_sig$gene, lasso4_model_min_coefs$target_gene
-)
-#> "RAF1" "CFLAR"
 
 
 #### ---- Random Forrest Classifier ---- ####
@@ -582,3 +473,107 @@ dev.off()
 # check accuracy with test set
 y_predicted <- predict(randomforest_model, test_data)
 mean(y_predicted == test_data$ras_allele)
+#> 0.4736842
+
+
+#### ---- Comparison to standard linear model ---- ####
+
+# fit a linear model for each gene
+run_linear_model1 <- function(tib, ...) {
+    fit <- lm(gene_effect ~ ras_allele, data = tib)
+    model_fit <- broom::tidy(fit) %>% janitor::clean_names()
+    model_info <- broom::glance(fit) %>% janitor::clean_names()
+    res <- list(
+        "model_fit" = model_fit,
+        "model_info" = model_info
+    )
+    return(res)
+}
+
+# linear model of gene effect using KRAS (WT vs M)
+linear_model <- model_data %>%
+    mutate(ras_allele = ifelse(ras_allele == "WT", "WT", "M"),
+           ras_allele = factor(ras_allele, levels = c("WT", "M"))) %>%
+    group_by(gene) %>%
+    nest() %>%
+    mutate(linear_model = map(data, run_linear_model1))
+
+linear_model_open <- unnest_model_results(linear_model)
+saveRDS(linear_model_open,
+        file.path("model_results", "predict_rasallele_linear_models.rds"))
+
+# significantly modeled genes
+linear_model_open_sig <- linear_model_open %>%
+    filter(
+        term == "ras_alleleM" &
+        q_value_model < 0.2 &
+        p_value_fit < 0.05 &
+        abs(estimate) > 0.2
+    ) %>%
+    arrange(q_value_model, p_value_fit, desc(abs(estimate)))
+
+# boxplots of gene effects of significant linear models
+linear_model_boxplot <- model_data %>%
+    filter(gene %in% linear_model_open_sig$gene) %>%
+    mutate(ras_mut = ifelse(ras_allele == "WT", "WT", "M")) %>%
+    ggplot(aes(x = ras_mut, y = gene_effect)) +
+    facet_wrap(~ gene, scales = "free") +
+    geom_hline(yintercept = 0, size = 0.5, color = "black", linetype = 2) +
+    geom_boxplot(aes(color = ras_mut), outlier.shape = NA) +
+    geom_jitter(color = "grey50", size = 0.6, width = 0.2, height = 0) +
+    scale_color_manual(values = c(WT = "mediumpurple1", M = "aquamarine4")) +
+    theme_bw() +
+    theme(
+        legend.position = "none",
+        axis.title.x = element_blank(),
+        strip.background = element_blank()
+    ) +
+    labs(
+        y = "depletion effect",
+        title = "Genetic dependencies of genes that are the best predictors of KRAS mutations",
+        subtitle = paste0(
+           "using a linear model estimation for depletion effect with KRAS mutation as the predictor"
+        )
+    )
+ggsave(
+    filename = file.path(
+        "images", "predict_rasallele",
+        "predict_rasallele_linear_model_boxplot.png"
+    ), plot = linear_model_boxplot,
+    width = 8, height = 6, units = "in", dpi = 300
+)
+
+# overlap of lm and LASSO
+model_intersect <- intersect(
+    linear_model_open_sig$gene, lasso4_model_min_coefs$target_gene
+)
+
+# volcano of LASSO-genes' results in linear model
+linear_model_volcano <- linear_model_open %>%
+    filter(gene %in% lasso4_model_min_coefs$target_gene) %>%
+    filter(term == "ras_alleleM") %>%
+    ggplot(aes(x = estimate, y = -log(p_value_fit))) +
+    geom_vline(xintercept = 0, size = 0.5, color = "grey25", linetype = 2) +
+    geom_point(aes(size = -log(q_value_model), color = -log(q_value_model))) +
+    ggrepel::geom_text_repel(aes(label = gene), size = 2) +
+    scale_x_continuous(limits = c(-1, 1)) +
+    scale_y_continuous(expand = expand_scale(mult = c(0, 0.05))) +
+    scale_color_gradient(low = "grey70", high = "grey10") +
+    scale_size_continuous(range = c(0.7, 3)) +
+    theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    labs(
+        x = "estimate",
+        y = "-log( p-value of mutant KRAS )",
+        color = "-log( model q-value )",
+        size = "-log( model q-value )",
+        title = "Linear model results for genes identified by LASSO",
+        subtitle = "only KRAS was also identified by the standard linear model"
+    )
+ggsave(
+    filename = file.path(
+        "images", "predict_rasallele",
+        "predict_rasallele_linear_model_volcano.png"
+    ), plot = linear_model_volcano,
+       width = 10, height = 8, units = "in", dpi = 300
+)
