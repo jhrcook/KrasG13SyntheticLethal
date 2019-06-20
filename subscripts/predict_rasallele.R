@@ -57,18 +57,6 @@ mapk_muts <- ccle_muts %>%
     pull(dep_map_id) %>%
     unique()
 
-# do the cell lines `ids` have a mutation in genes `gs`
-# not currently being used, though may be helpful in the future
-is_target_mutated <- function(ids, gs) {
-    f <- function(i, g) {
-        muts <- ccle_muts_select %>%
-            filter(dep_map_id == !!i & gene == !!g) %>%
-            nrow()
-        muts > 0
-    }
-    map2_lgl(ids, gs, f)
-}
-
 # data to use for modeling
 # [1] only use colorectal, lung, pancreas cell lines
 # [2] remove samples with multiple RAS, H/NRAS, or RAF mutations
@@ -210,8 +198,11 @@ lasso1_model_min_boxplot <- model_data %>%
     facet_wrap(~ gene, scales = "free") +
     geom_hline(yintercept = 0, size = 0.5, color = "black", linetype = 2) +
     geom_boxplot(aes(color = ras_mut), outlier.shape = NA) +
-    geom_jitter(color = "grey50", size = 0.6, width = 0.2, height = 0) +
-    scale_color_manual(values = c(WT = "mediumpurple1", M = "aquamarine4")) +
+    geom_jitter(aes(color = target_is_mutated),
+                size = 0.6, width = 0.2, height = 0) +
+    scale_color_manual(values = c(
+        WT = "mediumpurple1", M = "aquamarine4",
+        "TRUE" = "deeppink2", "FALSE" = "grey70")) +
     theme_bw() +
     theme(
         legend.position = "none",
@@ -405,8 +396,11 @@ lasso4_model_min_boxplot <- model_data %>%
     facet_wrap(~ gene, scales = "free") +
     geom_hline(yintercept = 0, size = 0.5, color = "black", linetype = 2) +
     geom_boxplot(aes(color = ras_mut), outlier.shape = NA) +
-    geom_jitter(color = "grey50", size = 0.6, width = 0.2, height = 0) +
-    scale_color_manual(values = c(WT = "mediumpurple1", M = "aquamarine4")) +
+    geom_jitter(aes(color = target_is_mutated),
+                size = 0.6, width = 0.2, height = 0) +
+    scale_color_manual(values = c(
+        WT = "mediumpurple1", M = "aquamarine4",
+        "TRUE" = "deeppink2", "FALSE" = "grey70")) +
     theme_bw() +
     theme(
         legend.position = "none",
@@ -417,7 +411,7 @@ lasso4_model_min_boxplot <- model_data %>%
         y = "depletion effect",
         title = "Genetic dependencies of genes that are the best predictors of KRAS mutations",
         subtitle = paste0(
-           "using LASSO-regularized linear regression (without KRAS) (accuracy = ",
+           "using LASSO-regularized linear regression (accuracy = ",
            round(lasso1_model_min_accuracy, 3), ")"
         )
     )
