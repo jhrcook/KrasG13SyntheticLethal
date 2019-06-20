@@ -56,18 +56,21 @@ dep_ppi <- hint_ppi %N>%
     )
 
 ggraph_plot_1 <- function(gr) {
-    p <- ggraph(gr, layout = "kk") +
-        geom_edge_link(aes(width = adj_to_dep), color = "grey70") +
+    p <- ggraph(gr, layout = "nicely") +
+        geom_edge_link(aes(color = adj_to_dep), width = 0.5) +
         geom_node_point(aes(color = estimate, size = node_size)) +
-        geom_node_text(aes(label = name), color = "grey10", repel = TRUE, size = 3) +
+        geom_node_text(aes(label = name),
+                       color = "grey10", repel = TRUE, size = 3) +
         scale_color_gradient2(low = "blue", high = "red", na.value = "grey50") +
-        scale_edge_width_manual(
-            values = c("both" = 1.2, "one" = 0.7, "neither" = 0.3)
+        scale_edge_color_manual(
+            values = c("both" = "grey40",
+                       "one" = "grey70",
+                       "neither" = "grey90")
         ) +
         theme_void() +
         labs(color = "G13D coef.",
              size = "subnet\ncentrality",
-             edge_width = "nodes are\nhits")
+             edge_color = "nodes are\nhits")
     return(p)
 }
 
