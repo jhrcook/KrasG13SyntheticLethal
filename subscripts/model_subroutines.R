@@ -47,7 +47,9 @@ ggplot_G12vG13Dscatter_wrapper <- function(tib, x_grp,
 
 # G13D depletion/survival boxplots
 ggplot_G13Ddepletionboxplots_wrapper <- function(tib) {
-    g <- ggplot(tib, aes(x = ras_allele, y = gene_effect)) +
+    g <- tib %>%
+        mutate(ras_allele = str_replace_all(ras_allele, "_", " ")) %>%
+        ggplot(aes(x = ras_allele, y = gene_effect)) +
         facet_wrap(~ gene, scales = "free") +
         geom_boxplot(aes(color = ras_allele), outlier.shape = NA, lwd = 0.5) +
         geom_hline(yintercept = 0, size = 0.5, color = "black", linetype = 2) +
@@ -65,7 +67,9 @@ ggplot_G13Ddepletionboxplots_wrapper <- function(tib) {
 
 # G12 - G13D (`diff_estimate`) volcano
 ggplot_G12DvG13Dvolcano_wrapper <- function(tib) {
-    g <- ggplot(tib, aes(x = diff_estimate, y = -log(q_value_model))) +
+    g <- tib %>%
+        mutate(point_color = str_replace_all(point_color, "_", " ")) %>%
+        ggplot(aes(x = diff_estimate, y = -log(q_value_model))) +
         geom_point(aes(color = point_color), size = 0.8) +
         geom_vline(xintercept = 0, color = "grey20", size = 0.5, linetype = 2) +
         ggrepel::geom_text_repel(aes(label = label),
@@ -126,7 +130,7 @@ ggplot_G12DvG13Dvolcano_tiled_wrapper <- function(volcano_data) {
         geom_point(aes(color = point_color), size = 0.8) +
         geom_vline(xintercept = 0, color = "grey20", size = 0.5, linetype = 2) +
         ggrepel::geom_text_repel(
-            aes(label = label), color = "grey20", size = 1.2,
+            aes(label = label), color = "grey20", size = 2,
             segment.size = 0.2, segment.color = "grey35",
         ) +
         scale_color_manual(values = c(allele_pal, "not_sig" = "grey60"),
@@ -143,7 +147,7 @@ ggplot_G12DvG13Dvolcano_tiled_wrapper <- function(volcano_data) {
         geom_point(aes(color = point_color), size = 0.8) +
         geom_vline(xintercept = 0, color = "grey20", size = 0.5, linetype = 2) +
         ggrepel::geom_text_repel(
-            aes(label = label), color = "grey20", size = 1.2,
+            aes(label = label), color = "grey20", size = 2,
             segment.size = 0.2, segment.color = "grey35",
         ) +
         scale_color_manual(values = c(allele_pal, "not_sig" = "grey60"),
