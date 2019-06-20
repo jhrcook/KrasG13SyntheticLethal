@@ -4,6 +4,8 @@
 
 library(tidyverse)
 
+source("./subscripts/global_constants.R")
+
 # unnest the model information and the fit results
 unnest_model_results <- function(tib) {
     new_tib <- tib %>%
@@ -174,7 +176,8 @@ ggplot_G12DvG13Dvolcano_tiled_wrapper <- function(volcano_data) {
 ggplot_G13Dvolcano_wrapper <- function(tib) {
     g <- ggplot(tib, aes(x = estimate, y = -log(p_value_fit))) +
         geom_point(aes(color = point_color)) +
-        ggrepel::geom_text_repel(aes(label = label), size = 2, color = "grey20") +
+        ggrepel::geom_text_repel(aes(label = label),
+                                 size = 2, color = "grey20") +
         scale_color_manual(
             values = c(
                 "depletion" = "tomato", "survival" = "dodgerblue"
@@ -183,4 +186,24 @@ ggplot_G13Dvolcano_wrapper <- function(tib) {
         scale_y_continuous(expand = expand_scale(mult = c(0, 0.05))) +
         theme_bw()
     return(g)
+}
+
+
+
+#### ---- Tidygraph helpers ---- ####
+
+# get neiborhood with a logical filter `lgl_filter`
+# pass lgl_filter values using `expr(bool_col1 | bool_col2 & x == y)`
+is_bridging_node <- function(neighborhood,
+                             lgl_filter,
+                             num_deps_bridged = 1,
+                             ignore_nodes = c(),
+                             ...) {
+    n_bridged <- neighborhood %N>%
+        filter(!(name %in% ignore_nodes)) %>%
+        as_tibble(neighborhood, active = "nodes") %>%
+        mutate(.lgl_results = rlang::eval_tidy(lgl_filter)) %>%
+        pull(.lgl_results) %>%
+        sum()
+    return(n_bridged >= num_deps_bridged)
 }
