@@ -185,7 +185,7 @@ volcano_plot <- models1_open %>%
     ggplot_G12DvG13Dvolcano_wrapper() +
     labs(x = "difference in estimate", y = "-log( model q-value )",
          color = "largest effect",
-         title = "Difference in effect size of KRAS G12 KRAS G13D",
+         title = "Difference in effect size of KRAS G12 and KRAS G13D",
          subtitle = "Highlighted genes had statistically significant models and a difference in estimate with magnitude of at least 0.15")
 ggsave(filename = "images/linear_model/model1_DiffEstimateVolcano_plot.png",
        plot = volcano_plot,
@@ -197,7 +197,7 @@ g13d_depletion_plot <- model_data1 %>%
     filter(gene %in% g13d_down) %>%
     ggplot_G13Ddepletionboxplots_wrapper() +
     labs(y = "depletion", color = "RAS allele",
-         title = "Target genes that cause G13D-specific depletion",
+         title = "Target genes that cause G13D-specific increased depletion",
          subtitle = "KRAS G13D was a significant predictor for whether the targeting of the indicated gene caused depletion of the cell line.")
 ggsave(filename = "images/linear_model/model1_G13dDepletion_plot.png",
        plot = g13d_depletion_plot,
@@ -208,8 +208,8 @@ g13d_survival_plot <- model_data1 %>%
     filter(gene %in% g13d_up) %>%
     ggplot_G13Ddepletionboxplots_wrapper() +
     labs(y = "depletion", color = "RAS allele",
-         title = "Target genes that cause G13D-specific survival",
-         subtitle = "KRAS G13D was a significant predictor for whether the targeting of the indicated gene caused increased survival\n(relative to other alleles) of the cell line.")
+         title = "Target genes that cause G13D-specific reduced depletion",
+         subtitle = "KRAS G13D was a significant predictor for whether the targeting of the indicated gene had reduced depletion of the cell line.")
 ggsave(filename = "images/linear_model/model1_G13dSurvival.png",
        plot = g13d_survival_plot,
        width = 10, height = 8, units = "in", dpi = 300)
@@ -379,7 +379,7 @@ model3_G13dDepletion_plot <- models3_open %>%
     left_join(model_data3, by = "gene") %>%
     ggplot_G13Ddepletionboxplots_wrapper() +
     labs(y = "depletion", color = "RAS allele",
-         title = "Target genes that cause G13D-specific depletion",
+         title = "Target genes that cause G13D-specific increased depletion",
          subtitle = "KRAS G13D was a significant predictor for whether the targeting of the indicated gene caused depletion of the cell line.")
 ggsave(filename = "images/linear_model/model3_G13dDepletion_plot.png",
        plot = model3_G13dDepletion_plot,
@@ -397,7 +397,7 @@ model3_G13dSurvival_plot <- models3_open %>%
     left_join(model_data3, by = "gene") %>%
     ggplot_G13Ddepletionboxplots_wrapper() +
     labs(y = "depletion", color = "RAS allele",
-         title = "Target genes that cause G13D-specific depletion",
+         title = "Target genes that cause G13D-specific reduced depletion",
          subtitle = "KRAS G13D was a significant predictor for whether the targeting of the indicated gene had reduced depletion of the cell line.")
 ggsave(filename = "images/linear_model/model3_G13dSurvival_plot.png",
        plot = model3_G13dSurvival_plot,
@@ -575,7 +575,7 @@ model4_G13dDepletion_plot <- models4_open %>%
     left_join(model_data3, by = "gene") %>%
     ggplot_G13Ddepletionboxplots_wrapper() +
     labs(y = "depletion", color = "RAS allele",
-         title = "Target genes that cause G13D-specific depletion",
+         title = "Target genes that cause G13D-specific increased depletion",
          subtitle = "KRAS G13D was a significant predictor for whether the targeting of the indicated gene caused depletion of the cell line.")
 ggsave(filename = "images/linear_model/model4_G13dDepletion_plot.png",
        plot = model4_G13dDepletion_plot,
@@ -637,7 +637,6 @@ models5_open <- unnest_model_results(models5) %>%
 saveRDS(models5_open, "model_results/linear_model_5.rds")
 
 
-
 # VISUALIZATION
 
 # G12 vs G13D volcano plot
@@ -660,7 +659,7 @@ volcano_plot5_data <- models5_open %>%
 model5_DiffEstimateVolcanoTiled_plot <- ggplot_G12DvG13Dvolcano_tiled_wrapper(volcano_plot5_data)
 ggsave(filename = "images/linear_model/model5_DiffEstimateVolcanoTiled_plot.png",
        plot = model5_DiffEstimateVolcanoTiled_plot,
-       width = 12, height = 6, units = "in", dpi = 300)
+       width = 10, height = 6, units = "in", dpi = 300)
 
 
 model5_G12VsG13dScatter_plot <- models5_open %>%
