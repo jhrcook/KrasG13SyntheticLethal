@@ -729,7 +729,7 @@ cancer_data <- readRDS(file.path(
     "data/ras_annotated_cancer_data_nohypermuts.rds"
 ))
 
-model4_g13d_dn <- models4_open %>%
+model5_g13d_dn <- models5_open %>%
     filter(
         q_value_model < 0.2 &
         term == "KRAS_G13D" &
@@ -737,7 +737,7 @@ model4_g13d_dn <- models4_open %>%
         p_value_fit < 0.05
     ) %>%
     pull(gene) %>% unlist() %>% unique()
-model4_g13d_up <- models4_open %>%
+model5_g13d_up <- models5_open %>%
     filter(
         q_value_model < 0.2 &
         term == "KRAS_G13D" &
@@ -757,7 +757,7 @@ gene_comuts <- cancer_data %>%
     group_by(ras_allele_grp) %>%
     mutate(ras_allele_grp_n = n_distinct(sampleid)) %>%
     ungroup() %>%
-    filter(gene %in% c(model4_g13d_dn, model4_g13d_up)) %>%
+    filter(gene %in% c(model5_g13d_dn, model5_g13d_up)) %>%
     group_by(gene, ras_allele_grp, ras_allele_grp_n) %>%
     summarise(co_mut_n = n_distinct(sampleid)) %>%
     ungroup() %>%
@@ -765,11 +765,12 @@ gene_comuts <- cancer_data %>%
     arrange(gene, ras_allele_grp) %>%
     tidyr::complete(
         gene, ras_allele_grp,
-        fill = list(ras_allele_grp_n = 0, co_mut_n = 0, co_mut_freq = 0)
+        fill = list(ras_allele_grp_n = NA, co_mut_n = 0, co_mut_freq = 0)
     ) %>%
     mutate(up_down = ifelse(
-        gene %in% model4_g13d_dn, "G13D depletion", "G13D survival"
+        gene %in% model5_g13d_dn, "G13D depletion", "G13D survival"
     ))
+
 
 # heatmap of co-mutations
 comut_heatmap <- gene_comuts %>%
