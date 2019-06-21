@@ -300,13 +300,9 @@ I merged this with the same network from the G13D-dependent genes.
 
 ![](images/overlap_alex/dep_DepDegBridgeNosingles_ppi_plot.png)
 
-An interesting pattern emerges if we put the focus on *KRAS*. There is a concentration of DEG and dependent genes 4 steps away from *KRAS*.
+The plot below shows the same subnetwork, just *KRAS* is placed at the center and the other nodes are located in rings around *KRAS* based on their distance to (number of edges between) *KRAS*.
 
 ![](images/overlap_alex/dep_DepDegBridgeKrasfocus_ppi_plot.png)
-
-The following bar-plot shows the percent of all nodes at each distance from *KRAS* in the entire PPI that are either differentially expressed or genetically dependent.
-
-![](images/overlap_alex/kras_dist_col.png)
 
 # Predicting *KRAS* mutation using depletion effects {.tabset}
 
@@ -330,7 +326,15 @@ For comparison, I ran a standard linear model for each gene using *KRAS* as the 
 
 I tried using a random forest classifier to classify whether KRAS was WT or mutated in a cell line based off of the depletion effects of all genes, but this had poor accuracy (around 50%). 
 
-I did not pursue this any further.
+![](images/predict_rasallele/randomforest1_model_plot)
+![](images/predict_rasallele/randomforest1_varImpPlot_plot.png)
+
+However, if only the genes from the LASSO-regularized regression are used, the training error rate drops to 6.25% and the accuracy with the test data is 1.
+
+![](images/predict_rasallele/randomforest2_model_plot.png)
+![](images/predict_rasallele/randomforest2_varImpPlot_plot.png)
+
+
 
 ## Conclusion
 
