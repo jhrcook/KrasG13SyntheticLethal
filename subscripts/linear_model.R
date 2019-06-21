@@ -4,8 +4,8 @@
 library(gridExtra)
 library(tidyverse)
 
-source("subscripts/global_constants.R")
-source("subscripts/model_subroutines.R")
+source(file.path("subscripts", "global_constants.R"))
+source(file.path("subscripts", "model_subroutines.R"))
 
 set.seed(0)
 
@@ -422,6 +422,7 @@ expresseion_effect_3 <- models3_open %>%
     unique() %>%
     left_join(models3_intercept, by = "gene") %>%
     left_join(model_data3, by = "gene") %>%
+    mutate(ras_allele = str_replace_all(ras_allele, "_", " ")) %>%
     ggplot(aes(x = gene_expression_norm, y = gene_effect)) +
     facet_wrap(~ gene, scales = "free") +
     geom_point(aes(color = ras_allele), size = 0.8) +
@@ -430,7 +431,8 @@ expresseion_effect_3 <- models3_open %>%
     theme_classic() +
     theme(legend.position = c(0.9, 0.15)) +
     labs(x = "gene expression (scaled)", y = "depletion effect",
-         title = "Gene expression levels that trend with depletion effect")
+         title = "Gene expression levels that trend with depletion effect",
+         color = "RAS allele")
 ggsave(filename = "images/linear_model/expresseion_effect_3.png",
        plot = expresseion_effect_3,
        width = 10, height = 6, units = "in", dpi = 300)
@@ -639,7 +641,7 @@ saveRDS(models5_open, "model_results/linear_model_5.rds")
 
 # VISUALIZATION
 
-# G12 vs G13D volcano plot
+# G12D vs G13D volcano plot
 volcano_plot5_data <- models5_open %>%
     filter(gene != "KRAS") %>%
     filter(str_detect(term, "KRAS")) %>%
@@ -656,10 +658,13 @@ volcano_plot5_data <- models5_open %>%
             !is.na(point_color), gene, ""
         )
     )
-model5_DiffEstimateVolcanoTiled_plot <- ggplot_G12DvG13Dvolcano_tiled_wrapper(volcano_plot5_data)
-ggsave(filename = "images/linear_model/model5_DiffEstimateVolcanoTiled_plot.png",
-       plot = model5_DiffEstimateVolcanoTiled_plot,
-       width = 10, height = 6, units = "in", dpi = 300)
+model5_DiffEstimateVolcanoTiled_plot <- ggplot_G12DvG13Dvolcano_tiled_wrapper(
+    volcano_plot5_data
+)
+ggsave(
+    filename = "images/linear_model/model5_DiffEstimateVolcanoTiled_plot.png",
+    plot = model5_DiffEstimateVolcanoTiled_plot,
+    width = 10, height = 6, units = "in", dpi = 300)
 
 
 model5_G12VsG13dScatter_plot <- models5_open %>%
@@ -728,7 +733,7 @@ cancer_data <- readRDS(file.path(
     "data/ras_annotated_cancer_data_nohypermuts.rds"
 ))
 
-model5_g13d_dn <- models5_open %>%
+model4_g13d_dn <- models4_open %>%
     filter(
         q_value_model < 0.2 &
         term == "KRAS_G13D" &
@@ -736,7 +741,7 @@ model5_g13d_dn <- models5_open %>%
         p_value_fit < 0.05
     ) %>%
     pull(gene) %>% unlist() %>% unique()
-model5_g13d_up <- models5_open %>%
+model4_g13d_up <- models4_open %>%
     filter(
         q_value_model < 0.2 &
         term == "KRAS_G13D" &
@@ -756,7 +761,7 @@ gene_comuts <- cancer_data %>%
     group_by(ras_allele_grp) %>%
     mutate(ras_allele_grp_n = n_distinct(sampleid)) %>%
     ungroup() %>%
-    filter(gene %in% c(model5_g13d_dn, model5_g13d_up)) %>%
+    filter(gene %in% c(model4_g13d_dn, model4_g13d_up)) %>%
     group_by(gene, ras_allele_grp, ras_allele_grp_n) %>%
     summarise(co_mut_n = n_distinct(sampleid)) %>%
     ungroup() %>%
@@ -767,7 +772,9 @@ gene_comuts <- cancer_data %>%
         fill = list(ras_allele_grp_n = NA, co_mut_n = 0, co_mut_freq = 0)
     ) %>%
     mutate(up_down = ifelse(
-        gene %in% model5_g13d_dn, "G13D depletion", "G13D survival"
+        gene %in% model4_g13d_dn,
+        "G13D increased depletion",
+        "G13D reduced depletion"
     ))
 
 
