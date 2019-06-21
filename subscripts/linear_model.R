@@ -946,3 +946,82 @@ comut_heatmap_rescaled <- gene_comuts %>%
 ggsave(filename = "images/linear_model/comut_heatmap_rescaled.png",
        plot = comut_heatmap_rescaled,
        width = 11, height = 4, units = "in", dpi = 300)
+
+
+# pheatmaps with hierarchical clustering
+
+save_pheatmap_png <- function(ph, filename,
+                              width = 12, height = 2.5, res = 300) {
+    png(filename, width = width, height = height, unit = "in", res = res)
+    grid::grid.newpage()
+    grid::grid.draw(ph$gtable)
+    dev.off()
+}
+
+# data for pheatmap creation
+pheatmap_data <- gene_comuts %>%
+    filter(gene != "KRAS") %>%
+    mutate(ras_allele_grp = str_replace_all(ras_allele_grp, "_", " ")) %>%
+    group_by(gene) %>%
+    mutate(tile_fill = scales::rescale(co_mut_freq)) %>%
+    ungroup()
+
+# not-scaled frequency
+pheatmap_mat <- pheatmap_data %>%
+    select(gene, ras_allele_grp, co_mut_freq) %>%
+    spread(key = gene, value = co_mut_freq) %>%
+    as.data.frame()
+rownames(pheatmap_mat) <- pheatmap_mat$ras_allele_grp
+pheatmap_mat <- pheatmap_mat[, -1]
+# G13D down
+comut_pheatmap_dn <- pheatmap::pheatmap(
+    pheatmap_mat[, colnames(pheatmap_mat) %in% model4_g13d_dn],
+    cluster_rows = FALSE,
+    angle_col = 45,
+    main = "Co-mutation frequency of the KRAS alleles and genes with increased dependency in KRAS G13D cell lines"
+)
+save_pheatmap_png(
+    comut_pheatmap_dn,
+    file.path("images", "linear_model", "comut_pheatmap_dn.png")
+)
+# G13D up
+comut_pheatmap_up <- pheatmap::pheatmap(
+    pheatmap_mat[, colnames(pheatmap_mat) %in% model4_g13d_up],
+    cluster_rows = FALSE,
+    angle_col = 45,
+    main = "Co-mutation frequency of the KRAS alleles and genes with reduced dependency in KRAS G13D cell lines"
+)
+save_pheatmap_png(
+    comut_pheatmap_up,
+    file.path("images", "linear_model", "comut_pheatmap_up.png")
+)
+
+# scaled frequency
+pheatmap_mat <- pheatmap_data %>%
+    select(gene, ras_allele_grp, tile_fill) %>%
+    spread(key = gene, value = tile_fill) %>%
+    as.data.frame()
+rownames(pheatmap_mat) <- pheatmap_mat$ras_allele_grp
+pheatmap_mat <- pheatmap_mat[, -1]
+# G13D down
+comut_pheatmap_dn <- pheatmap::pheatmap(
+    pheatmap_mat[, colnames(pheatmap_mat) %in% model4_g13d_dn],
+    cluster_rows = FALSE,
+    angle_col = 45,
+    main = "Co-mutation frequency of the KRAS alleles and genes with increased dependency in KRAS G13D cell lines (rescaled)"
+)
+save_pheatmap_png(
+    comut_pheatmap_dn,
+    file.path("images", "linear_model", "comut_pheatmap_dn_rescaled.png")
+)
+# G13D up
+comut_pheatmap_up <- pheatmap::pheatmap(
+    pheatmap_mat[, colnames(pheatmap_mat) %in% model4_g13d_up],
+    cluster_rows = FALSE,
+    angle_col = 45,
+    main = "Co-mutation frequency of the KRAS alleles and genes with reduced dependency in KRAS G13D cell lines (rescaled)"
+)
+save_pheatmap_png(
+    comut_pheatmap_up,
+    file.path("images", "linear_model", "comut_pheatmap_up_rescaled.png")
+)
