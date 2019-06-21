@@ -4,7 +4,7 @@
 
 library(tidyverse)
 
-source("./subscripts/global_constants.R")
+source(file.path("subscripts", "global_constants.R"))
 
 # unnest the model information and the fit results
 unnest_model_results <- function(tib) {
@@ -196,7 +196,7 @@ ggplot_G13Dvolcano_wrapper <- function(tib) {
 # pass lgl_filter values using `expr(bool_col1 | bool_col2 & x == y)`
 is_bridging_node <- function(neighborhood,
                              lgl_filter,
-                             num_deps_bridged = 1,
+                             num_neighbors = 1,
                              ignore_nodes = c(),
                              ...) {
     n_bridged <- neighborhood %N>%
@@ -205,5 +205,5 @@ is_bridging_node <- function(neighborhood,
         mutate(.lgl_results = rlang::eval_tidy(lgl_filter)) %>%
         pull(.lgl_results) %>%
         sum()
-    return(n_bridged >= num_deps_bridged)
+    return(n_bridged >= num_neighbors)
 }
