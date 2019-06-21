@@ -78,8 +78,6 @@ They are not normally distributed. Instead, most of the values lie near 0, indic
 
 ## *KRAS* G13D vs *KRAS* G12 vs. WT and target gene mutation {.tabset}
 
-### The model
-
 The first attempt at modeling the data used a standard linear model to estimate the depletion effect given the *KRAS* allele and mutation status of the target gene. The model had two covariates, *KRAS* allele and the mutational status of the target gene (binary). The alleles were grouped as *KRAS* codon 12, *KRAS* G13D, or WT. Only genes that caused a depletion to -0.25 or lower in at least one cell line were used.
 
 Cell lines were not used if they had multiple *KRAS* mutations or a mutation in *NRAS* or *A/B/CRAF*.
@@ -98,9 +96,9 @@ The plot shows target genes that had a significantly stronger depletion effect i
 
 ![](images/linear_model/model1_G13dDepletion_plot.png)
 
-### Genes with decreased depletion with *KRAS* G13D
+### Genes with reduced depletion with *KRAS* G13D
 
-On the other hand, the following plot shows target genes that had a significantly stronger *survival* effect (relative to the other alleles tested) in *KRAS* G13D cell lines. I use the term "survival" here due to a lack of a better option, but "reduced synthetic lethality" or "reduced depletion effect" may be more accurate.
+On the other hand, the following plot shows target genes that had a significantly weaker/reduced depletion effect (relative to the other alleles tested) in *KRAS* G13D cell lines.
 
 ![](images/linear_model/model1_G13dSurvival.png)
 
@@ -128,7 +126,7 @@ The volcano plot below shows the difference in the estimates for *KRAS* G12 and 
 
 ### Comparing coefficients of *KRAS* G12D and G13D
 
-The plot below compares the coefficients fit to *KRAS* G12 (x-axis) and G13D (y-axis). Values that lie along the dashed line showed no difference in depletion effects between the two mutant *KRAS* groups. The highlighted genes had significant models (q_value < 0.20) and a difference in coefficients of 0.2 in magnitude. 
+The plot below compares the coefficients fit to *KRAS* G12 (x-axis) and G13D (y-axis). Values that lie along the dashed line showed no difference in depletion effects between the two mutant *KRAS* groups. The highlighted genes had significant models (q-value < 0.20) and a difference in coefficients of 0.2 in magnitude. 
 
 ![](images/linear_model/model3_G12VsG13dScatter_plot.png)
 
@@ -138,9 +136,9 @@ The plot shows target genes that had a significantly stronger depletion effect i
 
 ![](images/linear_model/model3_G13dDepletion_plot.png)
 
-### Genes with decreased depletion with *KRAS* G13D
+### Genes with reduced depletion with *KRAS* G13D
 
-The plot shows target genes that had a significantly stronger depletion effect in *KRAS* G13D cell lines. These genes showed increased depletion in *KRAS* G13D cell lines, had a model q-value below 0.20, and a p-value for the G13D covariate below 0.05.
+The plot shows target genes that had a significantly reduced depletion effect in *KRAS* G13D cell lines. These genes showed reduced depletion in *KRAS* G13D cell lines, had a model q-value below 0.20, and a p-value for the G13D covariate below 0.05.
 
 ![](images/linear_model/model3_G13dSurvival_plot.png)
 
@@ -175,7 +173,7 @@ The following plots have the same layout as in previous models, so are not speci
 
 ![](images/linear_model/model4_G13dDepletion_plot.png)
 
-### Genes with decreased depletion with *KRAS* G13D
+### Genes with reduced depletion with *KRAS* G13D
 
 ![](images/linear_model/model4_G13dSurvival_plot.png)
 
@@ -188,7 +186,7 @@ Instead of including all codon 12 *KRAS* mutants in one group, the following mod
 
 ![](images/linear_model/model5_DiffEstimateVolcanoTiled_plot.png)
 
-### Comparing coefficients of *KRAS* G12 and G13D
+### Comparing coefficients of *KRAS* G12D and G13D
 
 ![](images/linear_model/model5_G12VsG13dScatter_plot.png)
 
@@ -196,7 +194,7 @@ Instead of including all codon 12 *KRAS* mutants in one group, the following mod
 
 ![](images/linear_model/model5_G13dDepletion_plot.png)
 
-### Genes with decreased depletion with *KRAS* G13D
+### Genes with reduced depletion with *KRAS* G13D
 
 ![](images/linear_model/model5_G13dSurvival_plot.png)
 
@@ -215,27 +213,47 @@ The following heatmap has the same information, however the fill color indicates
 
 ### Functional enrichment
 
-I used the ['enrichR'](https://cran.r-project.org/web/packages/enrichR/index.html) package to identify functionalities enriched in the genes that had G13D-specific genetic dependencies. The bar-plot below shows the identified functions along the y-axis and the corresponding p-value along the x-axis. The fraction at the end of each bar is the fraction of genes associated with the term that are in the list. The genes along the bar are those genes.
+I used the ['enrichR'](https://cran.r-project.org/web/packages/enrichR/index.html) package to identify functionalities enriched in the genes that had G13D-specific genetic dependencies. The bar-plot below shows the identified functions along the y-axis and the corresponding p-value along the x-axis. The fraction at the end of each bar is the fraction of genes associated with the term that are in the list. The genes along the bar are those that are associated with the term.
 
 ![](images/hit_annotation/fxnal_anno_plot.png)
 
 ### PPI subnetwork
 
-I extracted the subnetwork of the protein-protein interaction network (source: [High-quality INTeractomes database](http://hint.yulab.org); nodes = genes, edges = physical interactions) that contained most of the genes that had G13D-specific genetic dependencies and any other nodes that are connected to at least three of the identified genes. The two plots below show the same nodes, but the second only includes the physical interactions with the identified genes.
+I extracted the subnetwork of the protein-protein interaction network (source: [High-quality INTeractomes database](http://hint.yulab.org); nodes = genes, edges = physical interactions) that contained most of the genes that had G13D-specific genetic dependencies and any other nodes that are connected to at least three of these genes. The two plots below show the same nodes, but the second only includes the physical interactions with the genes with genetic effects.
 
-The thickness of the edge indicates the how many of the nodes it connects were from the genetic dependency analysis (either "both", "one", or "neither"). The color of the node indicates the coefficient; a positive coefficient (red) indicates that the targeting of the gene was predictive of *reduced* lethality, and blue the opposite. The size of the node indicates its centrality in the network (an indicator of importance).
+The shade of the edge indicates the how many of the nodes it connects were from the genetic dependency analysis (either "both", "one", or "neither"). The color of the node indicates the coefficient; a positive coefficient (red) indicates that the targeting of the gene was predictive of *reduced* lethality, and blue the opposite. The size of the node indicates its centrality in the network (an indicator of importance).
 
 ![](images/hit_annotation/dep_ppi_plot.png)
 
 ![](images/hit_annotation/dep_filtedges_ppi_plot.png)
 
+The final plot of the subnetwork of the PPI shows only the nodes of genes identified to have a G13D genetic dependency.
+
+![](images/hit_annotation/def_onlydeps_ppi_plot.png)
+
 ### Overlap with Alex (UCSF)
 
-I compared the genes identified in this analysis to those identified by Alex from UCSF. There was no overlap between the genes identified by DGE (q-value 0.05 and log-fold change > 2) and modeling G13D-specific dependencies (model q-value < 0.2, coefficient p-value < 0.05, coefficient of magnitude > 0.15).
+I compared the genes identified in this analysis to those identified by Alex from UCSF. There was no overlap between the genes identified by differential gene expression (DGE; q-value 0.05, log-fold change > 2) and modeling G13D-specific dependencies (model q-value < 0.2, coefficient p-value < 0.05, coefficient of magnitude > 0.15).
 
-The following figure is the volcano plot of the G13D coefficient against its p-value. The blue point are genes signficantly differentially expressed in any of the mouse model DGE comparisons. The top slection of those are labeled.
+The following figure is the volcano plot of the G13D coefficient against its p-value. The blue points are genes significantly differentially expressed in any of the mouse model DGE comparisons. The top selection of those are labeled.
 
 ![](images/overlap_alex/comparison_volcano.png)
+
+I conducted a similar extraction of the PPI subnetwork for the differentially expressed genes (DEG).
+
+![](images/overlap_alex/dep_dge_ppi_plot.png)
+
+I merged this with the same network from the G13D-dependent genes.
+
+![](images/overlap_alex/dep_DepDegBridgeNosingles_ppi_plot.png)
+
+An interesting pattern emerges if we put the focus on *KRAS*. There is a concentration of DEG and dependent genes 4 steps away from *KRAS*.
+
+![](images/overlap_alex/dep_DepDegBridgeKrasfocus_ppi_plot.png)
+
+The following bar-plot shows the percent of all nodes at each distance from *KRAS* in the entire PPI that are either differentially expressed or genetically dependent.
+
+![](images/overlap_alex/kras_dist_col.png)
 
 # Predicting *KRAS* mutation using depletion effects {.tabset}
 
