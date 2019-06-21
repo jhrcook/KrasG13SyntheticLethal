@@ -7,11 +7,15 @@ library(igraph)
 library(tidygraph)
 library(tidyverse)
 
+source(file.path("subscripts", "global_constants.R"))
+source(file.path("subscripts", "model_subroutines.R"))
+
 set.seed(0)
 
 #### ---- Prepare model results ---- ####
 
-genetic_dep_path <- file.path("model_results", "linear_model_5.rds")
+# model: (4) gene_effect ~ WT + G12 + G13D + mut(cond) + gene_expr
+genetic_dep_path <- file.path("model_results", "linear_model_4.rds")
 genetic_dep <- readRDS(genetic_dep_path)
 
 dep_results_sig <- genetic_dep %>%
@@ -30,21 +34,13 @@ hint_ppi <- readRDS(file.path("data", "HINT_full_tidygraph.rds")) %>%
     select(from, to) %>%
     jhcutils::get_giant_component()
 
-is_bridging_node <- function(neighborhood, num_deps_bridged = 1, ignore_nodes = c(), ...) {
-    n_bridged <- neighborhood %N>%
-        filter(!(name %in% ignore_nodes)) %>%
-        as_tibble(neighborhood, active = "nodes") %>%
-        pull(is_dep) %>%
-        sum()
-    return(n_bridged >= num_deps_bridged)
-}
-
 dep_ppi <- hint_ppi %N>%
     left_join(dep_results_sig, by = c("name" = "gene")) %>%
     mutate(is_dep = name %in% !!dep_results_sig$gene) %>%
     mutate(is_bridge = map_local_lgl(
         order = 1,
         .f = is_bridging_node,
+        lgl_filter = expr(is_dep),
         num_deps_bridged = 3, ignore_nodes = c()
     )) %E>%
     mutate(
@@ -82,7 +78,8 @@ dep_ppi_plot <- dep_ppi %N>%
     ggraph_plot_1()
 ggsave(filename = file.path("images", "hit_annotation", "dep_ppi_plot.png"),
        plot = dep_ppi_plot,
-       width = 12, height = 10, units = "in", dpi = 300)
+       width = 12, height = 10, units = "in", dpi = 300
+    )
 
 # plot PPI subnet with dependency hits
 dep_filtedges_ppi_plot <- dep_ppi %E>%
@@ -95,7 +92,24 @@ ggsave(
     filename = file.path(
         "images", "hit_annotation", "dep_filtedges_ppi_plot.png"
     ), plot = dep_filtedges_ppi_plot,
-    width = 12, height = 10, units = "in", dpi = 300)
+    width = 12, height = 10, units = "in", dpi = 300
+)
+
+# plot only the nodes with G13D genetic dependency
+def_onlydeps_ppi_plot <- dep_ppi %N>%
+    filter(is_dep) %>%
+    filter(centrality_degree(mode = "all") > 0) %>%
+    mutate(node_size = centrality_pagerank(directed = FALSE)) %>%
+    ggraph_plot_1()
+ggsave(
+    filename = file.path(
+        "images", "hit_annotation", "def_onlydeps_ppi_plot.png"
+    ), plot = def_onlydeps_ppi_plot,
+    width = 7, height = 7, units = "in", dpi = 300
+)
+
+
+# TODO: graphlayouts::"focus" on "KRAS"
 
 
 #### ---- GO analysis ---- ####
