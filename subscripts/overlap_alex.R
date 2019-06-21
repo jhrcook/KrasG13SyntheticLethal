@@ -13,6 +13,7 @@ source(file.path("subscripts", "model_subroutines.R"))
 
 set.seed(0)
 
+
 #### ---- Load Alex's results ---- ####
 
 # results of DGE in mouse between WT-G12D, WT-G13D, G12D-G13D
@@ -48,7 +49,7 @@ model_data_3 <- readRDS(file.path("model_results", "linear_model_3_data.rds"))
 #### ---- Comparing results ---- ####
 
 alex_results_sig <- alex_results %>%
-    filter(adj_p_val < 0.05 & abs(log_fc) > 2) %>%
+    filter(adj_p_val < 0.05 & abs(log_fc) > 2.0) %>%
     jhcutils::u_pull(gene) %>%
     str_to_upper()
 
@@ -104,15 +105,20 @@ dep_ppi <- hint_ppi %N>%
     mutate(is_dep = name %in% !!dep_results_sig$gene,
            is_deg = name %in% !!alex_results_sig) %>%
     mutate(
-        is_bridge = map_local_lgl(
+        is_bridge_either = map_local_lgl(
             order = 1,
             .f = is_bridging_node,
             lgl_filter = expr(is_dep | is_deg),
             num_neighbors = 3, ignore_nodes = c()
-        ), is_dge_bridge = map_local_lgl(
+        ), is_bridge_deg = map_local_lgl(
             order = 1,
             .f = is_bridging_node,
             lgl_filter = expr(is_deg),
+            num_neighbors = 3, ignore_nodes = c()
+        ), is_bridge_dep = map_local_lgl(
+            order = 1,
+            .f = is_bridging_node,
+            lgl_filter = expr(is_dep),
             num_neighbors = 3, ignore_nodes = c()
         )
     ) %E>%
@@ -127,7 +133,7 @@ dep_ppi <- hint_ppi %N>%
 
 # DEG with bridges only
 dep_dge_ppi_plot <- dep_ppi %N>%
-    filter(is_deg | is_dge_bridge) %>%
+    filter(is_deg | is_bridge_deg) %>%
     filter(centrality_degree(mode = "all") > 0) %>%
     mutate(point_color = ifelse(is_deg, "DGE", "bridge")) %>%
     ggraph(layout = "nicely") +
@@ -143,7 +149,6 @@ ggsave(
     plot = dep_dge_ppi_plot,
     width = 12, height = 10, unit = "in", dpi = 300
 )
-
 
 # genetic dependency or DEG only
 dep_depOrDge_ppi_plot <- dep_ppi %N>%
@@ -165,7 +170,7 @@ ggsave(
 
 # genetic dependency, DEG, and bridge nodes (no singletons)
 dep_DepDegBridgeNosingles_ppi_plot <- dep_ppi %N>%
-    filter(is_dep | is_deg | is_bridge) %E>%
+    filter(is_dep | is_deg | is_bridge_either) %E>%
     filter(
         .N()$is_dep[from] | .N()$is_dep[to] |
         .N()$is_deg[from] | .N()$is_deg[to]
@@ -190,7 +195,7 @@ ggsave(
 
 # same as previous with KRAS as focus
 tmp_ppi <- dep_ppi %N>%
-    filter(is_dep | is_deg | is_bridge) %E>%
+    filter(is_dep | is_deg | is_bridge_either) %E>%
     filter(
         .N()$is_dep[from] | .N()$is_dep[to] |
         .N()$is_deg[from] | .N()$is_deg[to]
@@ -217,36 +222,167 @@ ggsave(
 )
 
 # distance from KRAS
-kras_idx_complete <- jhcutils::get_node_index(dep_ppi, name == "KRAS")
-dep_ppi_dist <- dep_ppi %N>%
-    mutate(dist_to_kras = node_distance_to(kras_idx_complete, mode = "all"))
+# kras_idx_complete <- jhcutils::get_node_index(dep_ppi, name == "KRAS")
+# dep_ppi_dist <- dep_ppi %N>%
+#     mutate(dist_to_kras = node_distance_to(kras_idx_complete, mode = "all"))
 
-kras_dist_col <- dep_ppi_dist %>%
-    as_tibble(active = "nodes") %>%
-    mutate(mark = is_dep | is_deg) %>%
-    filter(name != "KRAS") %>%
-    group_by(dist_to_kras) %>%
-    summarise(nodes_total = n_distinct(name),
-              nodes_marked = sum(mark)) %>%
-    ungroup() %>%
-    mutate(percent_marked = nodes_marked / nodes_total) %>%
-    ggplot(aes(x = dist_to_kras, y = percent_marked)) +
-    geom_col(aes(fill = dist_to_kras)) +
-    scale_fill_gradient(low = "thistle1", high = "violetred", guide = FALSE) +
-    scale_x_continuous(breaks = 1:10) +
-    scale_y_continuous(expand = expand_scale(mult = c(0, 0.05))) +
-    theme_classic() +
-    theme(
-        plot.title = element_text(hjust = 0.5)
-    ) +
-    labs(x = "distance to KRAS", y = "percent of nodes at that distance",
-         title = "Distance of DEG or\nG13D-dependent genes to KRAS")
-ggsave(
-    filename = file.path(
-        "images", "overlap_alex", "kras_dist_col.png"
-    ), plot = kras_dist_col,
-    width = 4, height = 4, unit = "in", dpi = 300
-)
+# kras_dist_col <- dep_ppi_dist %>%
+#     as_tibble(active = "nodes") %>%
+#     mutate(mark = is_dep | is_deg) %>%
+#     filter(name != "KRAS") %>%
+#     group_by(dist_to_kras) %>%
+#     summarise(nodes_total = n_distinct(name),
+#               nodes_marked = sum(mark)) %>%
+#     ungroup() %>%
+#     mutate(percent_marked = nodes_marked / nodes_total) %>%
+#     ggplot(aes(x = dist_to_kras, y = percent_marked)) +
+#     geom_col(aes(fill = dist_to_kras)) +
+#     scale_fill_gradient(low = "thistle1", high = "violetred", guide = FALSE) +
+#     scale_x_continuous(breaks = 1:10) +
+#     scale_y_continuous(expand = expand_scale(mult = c(0, 0.05))) +
+#     theme_classic() +
+#     theme(
+#         plot.title = element_text(hjust = 0.5)
+#     ) +
+#     labs(x = "distance to KRAS", y = "percent of nodes at that distance",
+#          title = "Distance of DEG or\nG13D-dependent genes to KRAS")
+# ggsave(
+#     filename = file.path(
+#         "images", "overlap_alex", "kras_dist_col.png"
+#     ), plot = kras_dist_col,
+#     width = 4, height = 4, unit = "in", dpi = 300
+# )
 
 
 #### ---- Modules in PPI considering directionality of effect ---- ####
+
+
+expr_g13d_diff <- alex_results %>%
+    filter(adj_p_val < 0.05 & abs(log_fc) > 1.2 & mice == "mouse_g12d_vs_g13d") %>%
+    mutate(gene = str_to_upper(gene)) %>%
+    select(
+        mice, gene, log_fc, p_value, adj_p_val,
+        ave_expr, g12d_ave, g13d_ave, wt_ave
+    )
+# check that all genes are unique (should be `TRUE`)
+all(table(expr_g13d_diff$gene) == 1)
+
+# number of genes from DGE in HINT PPI
+mean(expr_g13d_diff$gene %in% V(hint_ppi)$name) * 100
+sum(expr_g13d_diff$gene %in% V(hint_ppi)$name)
+
+depAndDeg_ppi <- hint_ppi %N>%
+    mutate(is_dep = name %in% dep_results_sig$gene,
+           is_deg = name %in% expr_g13d_diff$gene,
+           is_either = is_deg | is_dep) %>%
+    left_join(dep_results_sig, by = c("name" = "gene")) %>%
+    left_join(expr_g13d_diff, by = c("name" = "gene")) %>%
+    mutate(
+        is_bridge_either = map_local_lgl(
+            order = 1,
+            .f = is_bridging_node,
+            lgl_filter = expr(is_either),
+            num_neighbors = 3, ignore_nodes = c()
+        ), is_bridge_deg = map_local_lgl(
+            order = 1,
+            .f = is_bridging_node,
+            lgl_filter = expr(is_deg),
+            num_neighbors = 3, ignore_nodes = c()
+        ), is_bridge_dep = map_local_lgl(
+            order = 1,
+            .f = is_bridging_node,
+            lgl_filter = expr(is_dep),
+            num_neighbors = 3, ignore_nodes = c()
+        )
+    ) %E>%
+    mutate(
+        adj_to_either = ifelse(
+            .N()$is_either[from] | .N()$is_either[to], "one", "neither"
+        ), adj_to_either = ifelse(
+            .N()$is_either[from] & .N()$is_either[to], "both", adj_to_either
+        ), adj_to_either = factor(adj_to_either, levels = c("both", "one", "neither"))
+    )
+
+
+# G12DvsG13D and dependency genes; colored by coefficient or logFC
+depdeg_color_ppi_plot <- depAndDeg_ppi %N>%
+    mutate(node_grp = ifelse(is_dep, "dep", "neither"),
+           node_grp = ifelse(is_deg, "deg", node_grp)) %>%
+    filter(is_either | is_bridge_either) %>%
+    filter(centrality_degree(mode = "all") > 0) %>%
+    mutate(point_color = ifelse(
+        is_dep, scales::rescale(estimate), scales::rescale(log_fc))
+    ) %>%
+    ggraph("nicely") +
+    geom_edge_link(color = "grey80", width = 0.5) +
+    geom_node_point(aes(color = point_color, shape = node_grp), size = 3) +
+    geom_node_text(aes(label = name),
+                   size = 3, color = "grey20", repel = TRUE) +
+    scale_color_gradient(low = "lightblue1", high = "royalblue3") +
+    scale_shape_manual(values = c(15, 17, 16)) +
+    theme_void()
+ggsave(
+    filename = file.path("images", "overlap_alex", "depdeg_color_ppi_plot.png"),
+    plot = depdeg_color_ppi_plot,
+    width = 12, height = 10, unit = "in", dpi = 300
+)
+
+# G12DvsG13D and dependency genes; colored by coefficient or logFC; clustered
+depdeg_colorClustered_ppi_plot <- depAndDeg_ppi %N>%
+    mutate(node_grp = ifelse(is_dep, "dep", "neither"),
+           node_grp = ifelse(is_deg, "deg", node_grp)) %>%
+    filter(is_either | is_bridge_either) %>%
+    filter(centrality_degree(mode = "all") > 0) %>%
+    mutate(cls = group_spinglass()) %>%
+    mutate(point_color = ifelse(
+        is_dep, scales::rescale(estimate), scales::rescale(log_fc))
+    ) %E>%
+    filter(.N()$cls[from] == .N()$cls[to]) %N>%
+    ggraph("nicely") +
+    geom_edge_link(color = "grey80", width = 0.5) +
+    geom_node_point(aes(color = point_color, shape = node_grp), size = 3) +
+    geom_node_text(aes(label = name),
+                   size = 3, color = "grey20", repel = TRUE) +
+    scale_color_gradient(low = "lightblue1", high = "royalblue3") +
+    scale_shape_manual(values = c(15, 17, 16)) +
+    theme_void()
+ggsave(
+    filename = file.path(
+        "images", "overlap_alex", "depdeg_colorClustered_ppi_plot.png"
+    ),
+    plot = depdeg_colorClustered_ppi_plot,
+    width = 12, height = 10, unit = "in", dpi = 300
+)
+
+# G12DvsG13D and dependency genes; colored by coefficient or logFC
+# clustered and removed bride-to-bridge edges
+depdeg_colorClusteredEdgefilter_ppi_plot <- depAndDeg_ppi %N>%
+    mutate(node_grp = ifelse(is_dep, "dep", "neither"),
+           node_grp = ifelse(is_deg, "deg", node_grp)) %>%
+    filter(is_either | is_bridge_either) %>%
+    filter(centrality_degree(mode = "all") > 0) %>%
+    mutate(cls = group_spinglass()) %>%
+    mutate(point_color = ifelse(
+        is_dep, scales::rescale(estimate), scales::rescale(log_fc))
+    ) %E>%
+    filter(adj_to_either != "neither")  %>%
+    filter(.N()$cls[from] == .N()$cls[to]) %N>%
+    ggraph("nicely") +
+    geom_edge_link(color = "grey70", width = 0.5) +
+    geom_node_point(aes(color = point_color, shape = node_grp), size = 3) +
+    geom_node_text(aes(label = name),
+                   size = 3, color = "grey20", repel = TRUE) +
+    scale_color_gradient(low = "lightblue1", high = "royalblue3") +
+    scale_shape_manual(values = c(15, 17, 16)) +
+    theme_void()
+ggsave(
+    filename = file.path(
+        "images", "overlap_alex", "depdeg_colorClusteredEdgefilter_ppi_plot.png"
+    ),
+    plot = depdeg_colorClusteredEdgefilter_ppi_plot,
+    width = 12, height = 10, unit = "in", dpi = 300
+)
+
+
+
+
