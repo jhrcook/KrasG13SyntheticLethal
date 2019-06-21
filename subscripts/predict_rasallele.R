@@ -92,6 +92,10 @@ colnames(lasso_data) %<>% str_replace_all("-", "_")
 
 #### ---- (1) WT vs Mutant RAS ---- ####
 
+lasso1_outfile <- file.path("model_results", "lasso1_output.txt")
+cat("LASSO: (1) WT vs Mutant RAS\n\n",
+    file = lasso1_outfile)
+
 # WT or M(utant) RAS
 lasso_data_1 <- lasso_data %>%
     mutate(ras_allele = ifelse(ras_allele == "WT", "WT", "M")) %>%
@@ -122,8 +126,11 @@ png(filename = file.path("images", "predict_rasallele", "lasso1_cv_plot.png"),
 plot(lasso1_cv)
 dev.off()
 
-lasso1_cv$lambda.min
-lasso1_cv$lambda.1se
+cat("lambda min:", lasso1_cv$lambda.min, "\n",
+    file = lasso1_outfile, append = TRUE)
+cat("lambda 1se:", lasso1_cv$lambda.1se, "\n\n",
+    file = lasso1_outfile, append = TRUE)
+
 
 # model with lambda.min
 lasso1_model_min <- glmnet(x, y,
@@ -137,7 +144,8 @@ x_test <- model.matrix(ras_allele ~ ., data = test_data)[, -1]
 y_predicted <- predict(lasso1_model_min, newx = x_test)
 predicted_ras_allele <- ifelse(y_predicted < 0.5, "WT", "M")
 lasso1_model_min_accuracy <- mean(predicted_ras_allele == test_data$ras_allele)
-lasso1_model_min_accuracy
+cat("lambda.min model accuracy:", lasso1_model_min_accuracy, "\n",
+    file = lasso1_outfile, append = TRUE)
 #> 0.8421053
 
 # model with lambda.1se
@@ -151,7 +159,8 @@ saveRDS(lasso1_model_1se, file.path("model_results", "lasso1_model_1se.rds"))
 y_predicted <- predict(lasso1_model_1se, newx = x_test)
 predicted_ras_allele <- ifelse(y_predicted < 0.5, "WT", "M")
 lasso1_model_1se_accuracy <- mean(predicted_ras_allele == test_data$ras_allele)
-lasso1_model_1se_accuracy
+cat("lambda.1se model accuracy:", lasso1_model_1se_accuracy, "\n",
+    file = lasso1_outfile, append = TRUE)
 #> 0.8421053
 
 # extract coefficient information
@@ -289,6 +298,10 @@ mean(y_predicted == test_data$ras_allele)
 #### ---- (4) LASSO without KRAS ---- ####
 # same as (1) just without KRAS as a predictor
 
+lasso4_outfile <- file.path("model_results", "lasso4_output.txt")
+cat("LASSO: (4) WT vs Mutant RAS without KRAS predictor\n\n",
+    file = lasso4_outfile)
+
 # remove KRAS column
 lasso_data_2 <- lasso_data_1 %>%
     select(-KRAS)
@@ -310,21 +323,24 @@ x[1:5, 1:5]
 y <- ifelse(train_data$ras_allele == "WT", 0, 1)
 
 # find lambda with CV
-lasso2_cv <- cv.glmnet(x, y, alpha = 1, family = "binomial")
-saveRDS(lasso2_cv, file.path("model_results", "lasso2_cv.rds"))
+lasso4_cv <- cv.glmnet(x, y, alpha = 1, family = "binomial")
+saveRDS(lasso4_cv, file.path("model_results", "lasso4_cv.rds"))
 
-png(filename = file.path("images", "predict_rasallele", "lasso2_cv_plot.png"),
+png(filename = file.path("images", "predict_rasallele", "lasso4_cv_plot.png"),
     width = 5, height = 6, units = "in", res = 300)
-plot(lasso2_cv)
+plot(lasso4_cv)
 dev.off()
-lasso2_cv$lambda.min
-lasso2_cv$lambda.1se
+
+cat("lambda min:", lasso4_cv$lambda.min, "\n",
+    file = lasso4_outfile, append = TRUE)
+cat("lambda 1se:", lasso4_cv$lambda.1se, "\n\n",
+    file = lasso4_outfile, append = TRUE)
 
 # model with lambda.min
 lasso4_model_min <- glmnet(x, y,
                           alpha = 1,
                           family = "binomial",
-                          lambda = lasso2_cv$lambda.min)
+                          lambda = lasso4_cv$lambda.min)
 saveRDS(lasso4_model_min, file.path("model_results", "lasso4_model_min.rds"))
 
 
@@ -333,21 +349,23 @@ x_test <- model.matrix(ras_allele ~ ., data = test_data)[, -1]
 y_predicted <- predict(lasso4_model_min, newx = x_test)
 predicted_ras_allele <- ifelse(y_predicted < 0.5, "WT", "M")
 lasso4_model_min_accuracy <- mean(predicted_ras_allele == test_data$ras_allele)
-lasso4_model_min_accuracy
+cat("lambda.min model accuracy:", lasso4_model_min_accuracy, "\n",
+    file = lasso4_outfile, append = TRUE)
 #> 0.8421053
 
 # model with lambda.1se
 lasso4_model_1se <- glmnet(x, y,
                           alpha = 1,
                           family = "binomial",
-                          lambda = lasso2_cv$lambda.1se)
+                          lambda = lasso4_cv$lambda.1se)
 saveRDS(lasso4_model_1se, file.path("model_results", "lasso4_model_1se.rds"))
 
 # test accuracy
 y_predicted <- predict(lasso4_model_1se, newx = x_test)
 predicted_ras_allele <- ifelse(y_predicted < 0.5, "WT", "M")
 lasso4_model_1se_accuracy <- mean(predicted_ras_allele == test_data$ras_allele)
-lasso4_model_1se_accuracy
+cat("lambda.min model accuracy:", lasso4_model_1se_accuracy, "\n",
+    file = lasso4_outfile, append = TRUE)
 #> 0.8421053
 
 # extract coefficient information
@@ -424,7 +442,11 @@ ggsave(
 
 
 
-#### ---- Random Forrest Classifier ---- ####
+#### ---- Random Forest Classifier ---- ####
+
+rf1_outfile <- file.path("model_results", "randomforest1_output.txt")
+cat("Random Forest Classifier (with top 75% most variable target genes)\n\n",
+    file = rf1_outfile)
 
 # only keep genes with most variable gene effect
 rf_data_1 <- lasso_data_1 %>%
@@ -449,25 +471,102 @@ randomforest_model <- randomForest(
     data = train_data,
     importance = TRUE
 )
-saveRDS(randomforest_model, file.path("model_results", "randomforest_model"))
+saveRDS(randomforest_model,
+        file.path("model_results", "randomforest1_model.rds"))
 
 png(filename = file.path(
-        "images", "predict_rasallele", "randomforest_model_plot.png"
+        "images", "predict_rasallele", "randomforest1_model_plot.png"
     ), width = 5, height = 6, units = "in", res = 300)
 plot(randomforest_model)
 dev.off()
-randomforest_model
-head(importance(randomforest_model))
+
+cat("-----", "\n", file = rf1_outfile, append = TRUE)
+msg <- capture.output(print(randomforest_model))
+for (line in msg) {
+    cat(line, "\n", file = rf1_outfile, append = TRUE)
+}
+cat("-----", "\n\n", file = rf1_outfile, append = TRUE)
+
 png(filename = file.path(
-        "images", "predict_rasallele", "randomforest_varImpPlot_plot.png"
+        "images", "predict_rasallele", "randomforest1_varImpPlot_plot.png"
     ), width = 5, height = 6, units = "in", res = 300)
 varImpPlot(randomforest_model)
 dev.off()
 
 # check accuracy with test set
 y_predicted <- predict(randomforest_model, test_data)
-mean(y_predicted == test_data$ras_allele)
+rf_accuracy <- mean(y_predicted == test_data$ras_allele)
+cat("random forest accuracy:", rf_accuracy, "\n",
+    file = rf1_outfile, append = TRUE)
 #> 0.4736842
+
+
+#### ---- Random Forest Classifier with LASSO results ---- ####
+
+rf2_outfile <- file.path("model_results", "randomforest2_output.txt")
+cat("Random Forest Classifier (with LASSO genes)\n\n",
+    file = rf2_outfile)
+
+lasso_genes <- lasso4_model_min_coefs %>%
+    filter(target_gene != "(Intercept)") %>%
+    pull(target_gene)
+
+rf_data_2 <- lasso_data_1 %>%
+    select(ras_allele, !!lasso_genes) %>%
+    mutate(ras_allele = factor(ras_allele, levels = c("WT", "M")))
+
+# test data
+set.seed(0)
+training_samples <- createDataPartition(rf_data_2$ras_allele,
+                                        p = 0.80,
+                                        list = FALSE)
+train_data <- rf_data_2[training_samples, ]
+test_data <- rf_data_2[-training_samples, ]
+
+# random forest
+randomforest2_model <- randomForest(
+    ras_allele ~ .,
+    data = train_data,
+    importance = TRUE
+)
+saveRDS(randomforest2_model,
+        file.path("model_results", "randomforest2_model.rds"))
+
+png(filename = file.path(
+        "images", "predict_rasallele", "randomforest2_model_plot.png"
+    ), width = 5, height = 6, units = "in", res = 300)
+plot(randomforest2_model)
+dev.off()
+
+cat("-----\n", file = rf2_outfile, append = TRUE)
+msg <- capture.output(print(randomforest2_model))
+for (line in msg) {
+    cat(line, "\n", file = rf2_outfile, append = TRUE)
+}
+cat("-----\n\n", file = rf2_outfile, append = TRUE)
+
+cat("-----\nImportance:\n", file = rf2_outfile, append = TRUE)
+importance(randomforest2_model)
+cat("-----\n\n", file = rf2_outfile, append = TRUE)
+
+png(filename = file.path(
+        "images", "predict_rasallele", "randomforest2_varImpPlot_plot.png"
+    ), width = 5, height = 6, units = "in", res = 300)
+varImpPlot(randomforest2_model)
+dev.off()
+
+png(filename = file.path(
+        "images", "predict_rasallele", "randomforest2_varImpPlot_plot.png"
+    ), width = 5, height = 6, units = "in", res = 300)
+varImpPlot(randomforest2_model)
+dev.off()
+
+# check accuracy with test set
+y_predicted <- predict(randomforest2_model, test_data)
+rf_accuracy <- mean(y_predicted == test_data$ras_allele)
+cat("random forest accuracy:", rf_accuracy, "\n",
+    file = rf2_outfile, append = TRUE)
+#> 1
 
 
 #### ---- Comparison to standard linear model ---- ####
