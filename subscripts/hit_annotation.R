@@ -41,7 +41,7 @@ dep_ppi <- hint_ppi %N>%
         order = 1,
         .f = is_bridging_node,
         lgl_filter = expr(is_dep),
-        num_deps_bridged = 3, ignore_nodes = c()
+        num_neighbors = 3, ignore_nodes = c()
     )) %E>%
     mutate(
         adj_to_dep = ifelse(
@@ -70,6 +70,19 @@ ggraph_plot_1 <- function(gr) {
     return(p)
 }
 
+# plot only the nodes with G13D genetic dependency
+def_onlydeps_ppi_plot <- dep_ppi %N>%
+    filter(is_dep) %>%
+    filter(centrality_degree(mode = "all") > 0) %>%
+    mutate(node_size = centrality_pagerank(directed = FALSE)) %>%
+    ggraph_plot_1()
+ggsave(
+    filename = file.path(
+        "images", "hit_annotation", "def_onlydeps_ppi_plot.png"
+    ), plot = def_onlydeps_ppi_plot,
+    width = 7, height = 7, units = "in", dpi = 300
+)
+
 # plot PPI subnet with dependency hits
 dep_ppi_plot <- dep_ppi %N>%
     filter(is_bridge | is_dep) %>%
@@ -95,22 +108,55 @@ ggsave(
     width = 12, height = 10, units = "in", dpi = 300
 )
 
-# plot only the nodes with G13D genetic dependency
-def_onlydeps_ppi_plot <- dep_ppi %N>%
-    filter(is_dep) %>%
+# cluster subnetwork
+dep_clustered_ppi_plot <- dep_ppi %N>%
+    filter(is_bridge | is_dep) %>%
     filter(centrality_degree(mode = "all") > 0) %>%
+    mutate(cls = group_spinglass()) %E>%
+    filter(.N()$cls[from] == .N()$cls[to]) %N>%
     mutate(node_size = centrality_pagerank(directed = FALSE)) %>%
     ggraph_plot_1()
 ggsave(
     filename = file.path(
-        "images", "hit_annotation", "def_onlydeps_ppi_plot.png"
-    ), plot = def_onlydeps_ppi_plot,
-    width = 7, height = 7, units = "in", dpi = 300
+        "images", "hit_annotation", "dep_clustered_ppi_plot.png"
+    ), plot = dep_clustered_ppi_plot,
+    width = 12, height = 10, units = "in", dpi = 300
 )
 
-
-# TODO: graphlayouts::"focus" on "KRAS"
-
+# degree centrality and model coefficient scatter plot
+tmp_guide_leg <- guide_legend(direction = "vertical", title.position = "left",
+                              title.theme = element_text(angle = 90))
+dep_scatterCentralityCoef_plot <- dep_ppi %N>%
+    mutate(deg_centrality = centrality_degree(mode = "all")) %>%
+    as_tibble() %>%
+    filter(is_dep) %>%
+    mutate(label = ifelse(
+        (abs(estimate) > 0.25 | deg_centrality > 25), name, ""
+    )) %>%
+    ggplot(aes(x = deg_centrality, y = estimate)) +
+    geom_hline(yintercept = 0, size = 0.5, linetype = 2, color = "grey20") +
+    geom_point(aes(color = -log(p_value_fit), size = -log(p_value_fit))) +
+    ggrepel::geom_text_repel(aes(label = label), size = 3, color = "grey30") +
+    scale_colour_gradient(low = "darkseagreen1", high = "green4") +
+    scale_x_continuous(breaks = seq(0, 200, 10)) +
+    scale_y_continuous(breaks = seq(-1, 1, 0.10)) +
+    guides(color = tmp_guide_leg, size = tmp_guide_leg) +
+    theme_bw() +
+    theme(
+        legend.position = "right",
+        plot.title = element_text(hjust = 0.5)
+    ) +
+    labs(x = "degree centrality in subnetwork",
+         y = "G13D coefficient",
+         title = "Importance of G13D synthetic lethal genes in the PPI",
+         color = "-log( coef. p-val. )",
+         size = "-log( coef. p-val. )")
+ggsave(
+    filename = file.path(
+        "images", "hit_annotation", "dep_scatterCentralityCoef_plot.png"
+    ), plot = dep_scatterCentralityCoef_plot,
+    width = 12, height = 7, units = "in", dpi = 200
+)
 
 #### ---- GO analysis ---- ####
 
