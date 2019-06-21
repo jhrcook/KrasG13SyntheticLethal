@@ -534,7 +534,7 @@ model4_DiffEstimateVolcano_plot <- models4_open %>%
         )
     ) %>%
     ggplot_G12DvG13Dvolcano_wrapper() +
-    labs(x = "difference in estimate", y = "-log( p-value of model )",
+    labs(x = "difference in estimate", y = "-log( q-value of model )",
          color = "largest effect",
          title = "Difference in effect size of KRAS G12 vs. KRAS G13D",
          subtitle = "Highlighted genes had statistically significant models and a difference in estimate with magnitude of at least 0.2")
@@ -724,6 +724,124 @@ model5_G13dSurvival_plot <- models5_open %>%
 ggsave(filename = "images/linear_model/model5_G13dSurvival_plot.png",
        plot = model5_G13dSurvival_plot,
        width = 10, height = 8, units = "in", dpi = 300)
+
+
+#### ---- (6) gene_effect ~ WT + G12 + G13D ---- ####
+# not considering of mutated target (relatively rare events) nor gene expression
+
+run_linear_model6 <- function(tib, ...) {
+    fit <- lm(gene_effect ~ ras_allele, data = tib)
+    model_fit <- broom::tidy(fit) %>% janitor::clean_names()
+    model_info <- broom::glance(fit) %>% janitor::clean_names()
+    return(list(
+        "model_fit" = model_fit,
+        "model_info" = model_info
+    ))
+}
+
+models6 <- model_data1 %>%
+    group_by(gene) %>%
+    nest() %>%
+    mutate(linear_model = map(data, run_linear_model6))
+
+models6_open <- unnest_model_results(models6) %>%
+    mutate(
+        term = ifelse(term == "(Intercept)", "WT", term),
+        term = ifelse(term == "ras_alleleKRAS_G12", "KRAS_G12", term),
+        term = ifelse(term == "ras_alleleKRAS_G13D", "KRAS_G13D", term),
+        term = ifelse(
+            term == "target_is_mutatedTRUE", "target_is_mutated", term
+        )
+    )
+saveRDS(models6_open, "model_results/linear_model_6.rds")
+
+
+# VISUALIZATION
+
+# G12 vs G13D volcano plot
+model6_DiffEstimateVolcano_plot <- models6_open %>%
+    filter(gene != "KRAS") %>%
+    filter(str_detect(term, "KRAS")) %>%
+    mutate(ras_allele = term) %>%
+    select(gene, ras_allele, estimate, q_value_model) %>%
+    spread(ras_allele, estimate) %>%
+    mutate(diff_estimate = KRAS_G12 - KRAS_G13D) %>%
+    mutate(
+        point_color = ifelse(
+            diff_estimate < -0.2 & q_value_model < 0.20, "KRAS_G12", NA
+        ), point_color = ifelse(
+            diff_estimate > 0.2 & q_value_model < 0.20, "KRAS_G13D", point_color
+        ), label = ifelse(
+            !is.na(point_color), gene, ""
+        )
+    ) %>%
+    ggplot_G12DvG13Dvolcano_wrapper() +
+    labs(x = "difference in estimate", y = "-log( q-value of model )",
+         color = "largest effect",
+         title = "Difference in effect size of KRAS G12 vs. KRAS G13D",
+         subtitle = "Highlighted genes had statistically significant models and a difference in estimate with magnitude of at least 0.2")
+ggsave(filename = "images/linear_model/model6_DiffEstimateVolcano_plot.png",
+       plot = model6_DiffEstimateVolcano_plot,
+       width = 8, height = 6, units = "in", dpi = 300)
+
+
+model6_G12VsG13dScatter_plot <- models6_open %>%
+    filter(gene != "KRAS") %>%
+    filter(str_detect(term, "KRAS")) %>%
+    mutate(ras_allele = term) %>%
+    select(gene, ras_allele, estimate, q_value_model) %>%
+    spread(ras_allele, estimate) %>%
+    mutate(diff_estimate = KRAS_G12 - KRAS_G13D) %>%
+    mutate(point_color = ifelse(
+        diff_estimate < -0.2 & q_value_model < 0.2, "KRAS G12D", NA
+    )) %>%
+    mutate(point_color = ifelse(
+        diff_estimate > 0.2 & q_value_model < 0.2, "KRAS G13D", point_color
+    )) %>%
+    mutate(label = ifelse(!is.na(point_color), gene, "")) %>%
+    ggplot_G12vG13Dscatter_wrapper(KRAS_G12,
+                                   xlim = c(-0.5, 0.5),
+                                   ylim = c(-0.5, 0.5)) +
+    labs(x = "KRAS G12D effect", y = "KRAS G13D effect")
+ggsave(filename = "images/linear_model/model6_G12VsG13dScatter_plot.png",
+       plot = model6_G12VsG13dScatter_plot,
+       width = 7, height = 7, units = "in", dpi = 300)
+
+# increased synthetic lethal interactions with G13D
+model6_G13dDepletion_plot <- models6_open %>%
+    filter(
+        q_value_model < 0.2 &
+        term == "KRAS_G13D" &
+        estimate < -0.15 &
+        p_value_fit < 0.05
+    ) %>%
+    select(gene) %>%
+    left_join(model_data1, by = "gene") %>%
+    ggplot_G13Ddepletionboxplots_wrapper() +
+    labs(y = "depletion", color = "RAS allele",
+         title = "Target genes that cause G13D-specific depletion",
+         subtitle = "KRAS G13D was a significant predictor for whether the targeting of the indicated gene caused depletion of the cell line.")
+ggsave(filename = "images/linear_model/model6_G13dDepletion_plot.png",
+       plot = model6_G13dDepletion_plot,
+       width = 10, height = 5, units = "in", dpi = 300)
+
+# decreased synthetic lethal interactions with G13D
+model6_G13dSurvival_plot <- models6_open %>%
+    filter(
+        q_value_model < 0.2 &
+        term == "KRAS_G13D" &
+        estimate > 0.15 &
+        p_value_fit < 0.05
+    ) %>%
+    select(gene) %>%
+    left_join(model_data1, by = "gene") %>%
+    ggplot_G13Ddepletionboxplots_wrapper() +
+    labs(y = "depletion", color = "RAS allele",
+         title = "Target genes that cause G13D-specific depletion",
+         subtitle = "KRAS G13D was a significant predictor for whether the targeting of the indicated gene had reduced depletion of the cell line.")
+ggsave(filename = "images/linear_model/model6_G13dSurvival_plot.png",
+       plot = model6_G13dSurvival_plot,
+       width = 10, height = 5, units = "in", dpi = 300)
 
 
 #### ---- Specific Follow-up ---- ####
