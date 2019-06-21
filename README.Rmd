@@ -116,7 +116,7 @@ The plot shows target genes that had a significantly stronger depletion effect i
 
 On the other hand, the following plot shows target genes that had a significantly weaker/reduced depletion effect (relative to the other alleles tested) in *KRAS* G13D cell lines.
 
-![](images/linear_model/model6_G13dSurvival.png)
+![](images/linear_model/model6_G13dSurvival_plot.png)
 
 
 ## *KRAS* G13D vs *KRAS* G12 vs. WT and target gene mutation {.tabset}

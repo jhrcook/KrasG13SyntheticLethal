@@ -75,12 +75,46 @@ They are not normally distributed. Instead, most of the values lie near 0, indic
 
 (Analysis conducted in `subscripts/linear_model.R`.)
 
+For all of the following analyses, these two conditions were met:
+
+1. Only genes that caused a depletion to -0.25 or lower in at least one cell line were used.
+2. Cell lines were not used if they had multiple *KRAS* mutations or a mutation in *NRAS* or *A/B/CRAF*.
+
+
+## *KRAS* G13D vs *KRAS* G12 vs. WT {.tabset}
+
+The first attempt at modeling the data used a standard linear model to estimate the depletion effect given the *KRAS* allele, grouped as either WT, *KRAS* G12, or *KRAS* G13D.
+
+### Volcano plot of *KRAS* G12 - G13D estimate
+
+The volcano plot below shows the difference in the estimates for *KRAS* G12 and *KRAS* G13D and the log-transformed BH FDR-adjusted p-value (q-value) of the model. The labeled genes had a model q-value less than 0.20 and a difference in estimate of magnitude greater than 0.2. The points to the left (blue) had a stronger depletion effect in *KRAS* G12 mutants where the points to the right (red) had a stronger depletion effect in *KRAS* G13D.
+
+![](images/linear_model/model6_DiffEstimateVolcano_plot.png)
+
+The genes with very low model q-values but little difference between *KRAS* G12 and G13D estimates (middle of the x-axis and high on the y-axis) were likely highly predicted by the WT covariate (i.e. the gene effect did not change much according to the *KRAS* allele).
+
+### Comparing coefficients of *KRAS* G12D and G13D
+
+The plot below compares the coefficients fit to *KRAS* G12 (x-axis) and G13D (y-axis). Values that lie along the dashed line showed no difference in depletion effects between the two mutant *KRAS* groups. The highlighted genes had significant models (q-value < 0.20) and a difference in coefficients of 0.2 in magnitude. 
+
+![](images/linear_model/model6_G12VsG13dScatter_plot.png)
+
+### Genes with increased depletion with *KRAS* G13D
+
+The plot shows target genes that had a significantly stronger depletion effect in *KRAS* G13D cell lines. These genes showed increased depletion in *KRAS* G13D cell lines, had a model q-value below 0.20, and a p-value for the G13D covariate below 0.05.
+
+![](images/linear_model/model6_G13dDepletion_plot.png)
+
+### Genes with reduced depletion with *KRAS* G13D
+
+On the other hand, the following plot shows target genes that had a significantly weaker/reduced depletion effect (relative to the other alleles tested) in *KRAS* G13D cell lines.
+
+![](images/linear_model/model6_G13dSurvival_plot.png)
+
 
 ## *KRAS* G13D vs *KRAS* G12 vs. WT and target gene mutation {.tabset}
 
-The first attempt at modeling the data used a standard linear model to estimate the depletion effect given the *KRAS* allele and mutation status of the target gene. The model had two covariates, *KRAS* allele and the mutational status of the target gene (binary). The alleles were grouped as *KRAS* codon 12, *KRAS* G13D, or WT. Only genes that caused a depletion to -0.25 or lower in at least one cell line were used.
-
-Cell lines were not used if they had multiple *KRAS* mutations or a mutation in *NRAS* or *A/B/CRAF*.
+The next attempt at modeling the data used a standard linear model to estimate the depletion effect given the *KRAS* allele and mutation status of the target gene. The model had two covariates, *KRAS* allele and the mutational status of the target gene (binary). The alleles were grouped as *KRAS* codon 12, *KRAS* G13D, or WT. Only genes that caused a depletion to -0.25 or lower in at least one cell line were used.
 
 ### Volcano plot of *KRAS* G12 - G13D estimate
 
@@ -88,7 +122,7 @@ The volcano plot below shows the difference in the estimates for *KRAS* G12 and 
 
 ![](images/linear_model/model1_DiffEstimateVolcano_plot.png)
 
-The genes with very low model q-values but little difference between *KRAS* G12 and G13D estimates (middle of the x-axis and high on the y-axis) were likely highly predicted by the WT covariate (i.e. the gene effect did not change much according to the *RAS* allele) or mutational status.
+The genes with very low model q-values but little difference between *KRAS* G12 and G13D estimates (middle of the x-axis and high on the y-axis) were likely highly predicted by the WT covariate (i.e. the gene effect did not change much according to the *KRAS* allele) or mutational status.
 
 ### Genes with increased depletion with *KRAS* G13D
 
@@ -211,6 +245,18 @@ The following heatmap has the same information, however the fill color indicates
 
 ![](images/linear_model/comut_heatmap_rescaled.png)
 
+Below are the same plots, but the columns (target genes) are hierarchically clustered.
+
+![](images/linear_model/comut_pheatmap_dn.png)
+
+![](images/linear_model/comut_pheatmap_up.png)
+
+With the co-mutation frequencies rescaled within each gene.
+
+![](images/linear_model/comut_pheatmap_dn_rescaled.png)
+
+![](images/linear_model/comut_pheatmap_up_rescaled.png)
+
 ### Functional enrichment
 
 I used the ['enrichR'](https://cran.r-project.org/web/packages/enrichR/index.html) package to identify functionalities enriched in the genes that had G13D-specific genetic dependencies. The bar-plot below shows the identified functions along the y-axis and the corresponding p-value along the x-axis. The fraction at the end of each bar is the fraction of genes associated with the term that are in the list. The genes along the bar are those that are associated with the term.
@@ -285,8 +331,4 @@ Using machine learning algorithms requires the split of the data into testing an
 
 Still, the LASSO-regularized linear regression on *KRAS* mutational status was interesting and may have identified a few avenues of further exploration.
 
-
-
 ---
-
-There is currently minimal code in the README, however, it will be added at the end from the scripts where the analysis was originally done. The end goal is for the README to be a fully reproducible document on its own.
