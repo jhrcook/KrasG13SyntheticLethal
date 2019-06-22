@@ -1025,3 +1025,53 @@ save_pheatmap_png(
     comut_pheatmap_up,
     file.path("images", "linear_model", "comut_pheatmap_up_rescaled.png")
 )
+
+
+# genes with co-mut trend that follows the depletion effect results
+models4_open %>%
+    filter(
+        q_value_model < 0.2 &
+        term == "KRAS_G13D" &
+        estimate < -0.15 &
+        p_value_fit < 0.05
+    ) %>%
+    select(gene) %>%
+    left_join(model_data3, by = "gene")
+
+
+compare_allele_comut_freqs <- function(tib) {
+    g13d_val <- filter(tib, ras_allele_grp == "KRAS_G13D") %>% pull(co_mut_freq)
+    g12_val <- filter(tib, ras_allele_grp == "KRAS_G12") %>% pull(co_mut_freq)
+    wt_val <- filter(tib, ras_allele_grp == "WT") %>% pull(co_mut_freq)
+
+    # criteria for TRUE:
+    # rate of mut_freq is lower in G13D than G12 and either:
+    #   1) G13D is less than or equal to WT
+    #   2) WT is below G12D
+    return(g13d_val < g12_val & (g13d_val <= wt_val | wt_val < g12_val))
+}
+
+# genes that follow the expected patten of reduced co-mutation
+follow_mutex <- gene_comuts %>%
+    filter(gene %in% model4_g13d_dn) %>%
+    group_by(gene) %>%
+    nest() %>%
+    mutate(g13d_less_freq = map_lgl(data, compare_allele_comut_freqs)) %>%
+    unnest() %>%
+    ungroup() %>%
+    filter(g13d_less_freq) %>%
+    jhcutils::u_pull(gene)
+
+# which genes are essential
+readRDS(file.path("data", "gene_essentiality.tib")) %>%
+    mutate(gene = str_remove(gene, " \\([:alnum:]+\\)")) %>%
+    filter(gene %in% follow_mutex)
+
+final_list_of_hits <- c(
+    "ART1", "BET1L", "NPHP1", "NUP88", "PROSER1", "SCARA3", "UBE2S", "ZBTB17"
+)
+
+cat("Final list of genes to use:\n")
+for (g in final_list_of_hits) {
+    cat("\t", g, "\n")
+}
