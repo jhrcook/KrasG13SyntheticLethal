@@ -55,8 +55,8 @@ ggplot_G13Ddepletionboxplots_wrapper <- function(tib) {
         facet_wrap(~ gene, scales = "free") +
         geom_boxplot(aes(color = ras_allele), outlier.shape = NA, lwd = 0.5) +
         geom_hline(yintercept = 0, size = 0.5, color = "black", linetype = 2) +
-        geom_jitter(aes(color = ras_allele), size = 0.3, width = 0.2) +
-        scale_color_manual(values = allele_pal) +
+        geom_jitter(aes(color = target_is_mutated), size = 0.3, width = 0.2) +
+        scale_color_manual(values = c(allele_pal, "TRUE" = "seagreen3", "FALSE" = "grey65")) +
         theme_minimal() +
         theme(
             axis.text.x = element_blank(),
