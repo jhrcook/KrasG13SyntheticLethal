@@ -280,9 +280,17 @@ The shade of the edge indicates the how many of the nodes it connects were from 
 
 ![](images/hit_annotation/dep_filtedges_ppi_plot.png)
 
-The final plot of the subnetwork of the PPI shows only the nodes of genes identified to have a G13D genetic dependency.
+The following plot of the subnetwork of the PPI shows only the nodes of genes identified to have a G13D genetic dependency.
 
 ![](images/hit_annotation/def_onlydeps_ppi_plot.png)
+
+The subnetwork can be dissected by clustering.
+
+![](images/hit_annotation/dep_clustered_ppi_plot.png)
+
+The degree of a node (number of neighbors) can be another indication of importance. The following figure plots the degree of each gene in the subnetwork against the *KRAS* G13D coefficient from the modeling of genetic dependence.
+
+![](images/hit_annotation/dep_scatterCentralityCoef_plot.png)
 
 ### Overlap with Alex (UCSF)
 
@@ -303,6 +311,15 @@ I merged this with the same network from the G13D-dependent genes.
 The plot below shows the same subnetwork, just *KRAS* is placed at the center and the other nodes are located in rings around *KRAS* based on their distance to (number of edges between) *KRAS*.
 
 ![](images/overlap_alex/dep_DepDegBridgeKrasfocus_ppi_plot.png)
+
+However, if I only use the differentially expressed genes from the G12D vs G13D comparison, no subnetwork can be built - none of the nodes are connected by bridging nodes like was seen with the genes from the dependency analysis. Some of the genes do fall within the subnetwork extracted from the dependency analysis. The plot below shows the PPI subnetwork comprised of the genes with G13D dependencies (triangle), those found to be differentially expressed between *KRAS* G12D and G13D (squares), and any "bridge" node that is connected to at least 3 of those genes (grey circles).
+
+![](images/overlap_alex/depdeg_color_ppi_plot.png)
+
+The following plot is of the same subnetwork, but clustered by connectivity. The edges between "bridge" nodes have been removed.
+
+![](images/overlap_alex/depdeg_colorClusteredEdgefilter_ppi_plot.png)
+
 
 # Predicting *KRAS* mutation using depletion effects {.tabset}
 
@@ -326,13 +343,11 @@ For comparison, I ran a standard linear model for each gene using *KRAS* as the 
 
 I tried using a random forest classifier to classify whether KRAS was WT or mutated in a cell line based off of the depletion effects of all genes, but this had poor accuracy (around 50%). 
 
-![](images/predict_rasallele/randomforest1_model_plot)
-![](images/predict_rasallele/randomforest1_varImpPlot_plot.png)
+![](images/predict_rasallele/randomforest1_model_plot.png){width=400px} ![](images/predict_rasallele/randomforest1_varImpPlot_plot.png){width=400px}
 
 However, if only the genes from the LASSO-regularized regression are used, the training error rate drops to 6.25% and the accuracy with the test data is 1.
 
-![](images/predict_rasallele/randomforest2_model_plot.png)
-![](images/predict_rasallele/randomforest2_varImpPlot_plot.png)
+![](images/predict_rasallele/randomforest2_model_plot.png){width=400px} ![](images/predict_rasallele/randomforest2_varImpPlot_plot.png){width=400px}
 
 
 
