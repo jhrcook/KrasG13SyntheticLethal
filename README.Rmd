@@ -384,12 +384,14 @@ Below are the genes I would recommend further pursuing as *KRAS* G13D-specific s
 |-------------|-----------------|------------------|---------------|
 | **ART1**    | Yes             | specific         | specific      |
 | **BET1L**   | Yes             | specific         | specific      |
+| **ERMARD**  | No              | specific         | specific      |
 | **NPHP1**   | Yes             | specific         | high variance |
 | **NUP88**   | Yes             | very strong      | specific      |
 | **PROSER1** | Yes             | small difference | high variance |
 | **SCARA3**  | Yes             | specific         | specific      |
 | **UBE2S**   | Yes             | small difference | specific      |
 | **ZBTB17**  | Yes             | small difference | specific      |
+
 
 ### Some information on the genes {.tabset}
 
@@ -416,6 +418,19 @@ Located on the cell membrane and the sarcoplasmic reticulum membrane (in myocyte
 Full name: **BET1-like protein**
 
 "Vesicle SNARE required for targeting and fusion of retrograde transport vesicles with the Golgi complex. Required for the integrity of the Golgi complex (By similarity)."
+
+
+#### ERMARD
+
+[![](https://img.shields.io/badge/Uniprot-ERMARD-4E9BBA.svg?style=flat&logo=microgenetics)](https://www.uniprot.org/uniprot/Q5T6L9)
+[![](https://img.shields.io/badge/STRING-ERMARD-B8B77B.svg?style=flat&logo=graphql)](https://string-db.org/cgi/network.pl?taskId=dJ1fiJDsN4He)
+
+
+Full name: **Endoplasmic reticulum membrane-associated RNA degradation protein**
+
+"May play a role in neuronal migration during embryonic development."
+
+Localized to the ER.
 
 #### NPHP1
 
