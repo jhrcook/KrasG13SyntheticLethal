@@ -92,6 +92,7 @@ model_data <- dep_map %>%
         )
     )
 
+saveRDS(model_data, file.path("model_results", "model_data.rds"))
 
 #### ---- (1) gene_effect ~ WT + G12 + G13D + mut_target ---- ####
 
