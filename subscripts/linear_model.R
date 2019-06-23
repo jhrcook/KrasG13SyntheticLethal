@@ -469,7 +469,7 @@ mutation_effect_3 <- models3_open %>%
     ) +
     labs(y = "depletion effect",
          title = "Mutational status of the target and depletion effect")
-ggsave(filename = "images/linear_model/mutation_effect_3.png",
+ggsave(filename = file.path("images", "linear_model", "mutation_effect_3.png"),
        plot = mutation_effect_3,
        width = 10, height = 7, units = "in", dpi = 300)
 
@@ -511,7 +511,7 @@ models4_open <- unnest_model_results(models4) %>%
             term == "target_is_mutatedTRUE", "target_is_mutated", term
         )
     )
-saveRDS(models4_open, "model_results/linear_model_4.rds")
+saveRDS(models4_open, file.path("model_results", "linear_model_4.rds"))
 
 
 # VISUALIZATION
@@ -538,9 +538,11 @@ model4_DiffEstimateVolcano_plot <- models4_open %>%
          color = "largest effect",
          title = "Difference in effect size of KRAS G12 vs. KRAS G13D",
          subtitle = "Highlighted genes had statistically significant models and a difference in estimate with magnitude of at least 0.2")
-ggsave(filename = "images/linear_model/model4_DiffEstimateVolcano_plot.png",
-       plot = model4_DiffEstimateVolcano_plot,
-       width = 8, height = 6, units = "in", dpi = 300)
+ggsave(
+    filename = file.path(
+        "images", "linear_model", "model4_DiffEstimateVolcano_plot.png"
+    ),plot = model4_DiffEstimateVolcano_plot,
+    width = 8, height = 6, units = "in", dpi = 300)
 
 
 model4_G12VsG13dScatter_plot <- models4_open %>%
