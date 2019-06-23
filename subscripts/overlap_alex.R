@@ -258,7 +258,11 @@ ggsave(
 
 
 expr_g13d_diff <- alex_results %>%
-    filter(adj_p_val < 0.05 & abs(log_fc) > 1.2 & mice == "mouse_g12d_vs_g13d") %>%
+    filter(
+        adj_p_val < 0.05 &
+        abs(log_fc) > 1.2 &
+        mice == "mouse_g12d_vs_g13d"
+    ) %>%
     mutate(gene = str_to_upper(gene)) %>%
     select(
         mice, gene, log_fc, p_value, adj_p_val,
@@ -300,7 +304,9 @@ depAndDeg_ppi <- hint_ppi %N>%
             .N()$is_either[from] | .N()$is_either[to], "one", "neither"
         ), adj_to_either = ifelse(
             .N()$is_either[from] & .N()$is_either[to], "both", adj_to_either
-        ), adj_to_either = factor(adj_to_either, levels = c("both", "one", "neither"))
+        ), adj_to_either = factor(
+            adj_to_either, levels = c("both", "one", "neither")
+        )
     )
 
 
@@ -311,14 +317,16 @@ depdeg_color_ppi_plot <- depAndDeg_ppi %N>%
     filter(is_either | is_bridge_either) %>%
     filter(centrality_degree(mode = "all") > 0) %>%
     mutate(point_color = ifelse(
-        is_dep, scales::rescale(estimate), scales::rescale(log_fc))
+        is_dep,
+        scales::rescale(estimate, to = c(-1, 1)),
+        scales::rescale(log_fc, to = c(-1, 1)))
     ) %>%
     ggraph("nicely") +
     geom_edge_link(color = "grey80", width = 0.5) +
     geom_node_point(aes(color = point_color, shape = node_grp), size = 3) +
     geom_node_text(aes(label = name),
                    size = 3, color = "grey20", repel = TRUE) +
-    scale_color_gradient(low = "lightblue1", high = "royalblue3") +
+    scale_color_gradient2(low = "blue", high = "red", na.value = "grey50") +
     scale_shape_manual(values = c(15, 17, 16)) +
     theme_void()
 ggsave(
@@ -335,7 +343,9 @@ depdeg_colorClustered_ppi_plot <- depAndDeg_ppi %N>%
     filter(centrality_degree(mode = "all") > 0) %>%
     mutate(cls = group_spinglass()) %>%
     mutate(point_color = ifelse(
-        is_dep, scales::rescale(estimate), scales::rescale(log_fc))
+        is_dep,
+        scales::rescale(estimate, to = c(-1, 1)),
+        scales::rescale(log_fc, to = c(-1, 1)))
     ) %E>%
     filter(.N()$cls[from] == .N()$cls[to]) %N>%
     ggraph("nicely") +
@@ -343,7 +353,7 @@ depdeg_colorClustered_ppi_plot <- depAndDeg_ppi %N>%
     geom_node_point(aes(color = point_color, shape = node_grp), size = 3) +
     geom_node_text(aes(label = name),
                    size = 3, color = "grey20", repel = TRUE) +
-    scale_color_gradient(low = "lightblue1", high = "royalblue3") +
+    scale_color_gradient2(low = "blue", high = "red", na.value = "grey50") +
     scale_shape_manual(values = c(15, 17, 16)) +
     theme_void()
 ggsave(
@@ -363,7 +373,9 @@ depdeg_colorClusteredEdgefilter_ppi_plot <- depAndDeg_ppi %N>%
     filter(centrality_degree(mode = "all") > 0) %>%
     mutate(cls = group_spinglass()) %>%
     mutate(point_color = ifelse(
-        is_dep, scales::rescale(estimate), scales::rescale(log_fc))
+        is_dep,
+        scales::rescale(estimate, to = c(-1, 1)),
+        scales::rescale(log_fc, to = c(-1, 1)))
     ) %E>%
     filter(adj_to_either != "neither")  %>%
     filter(.N()$cls[from] == .N()$cls[to]) %N>%
@@ -372,7 +384,7 @@ depdeg_colorClusteredEdgefilter_ppi_plot <- depAndDeg_ppi %N>%
     geom_node_point(aes(color = point_color, shape = node_grp), size = 3) +
     geom_node_text(aes(label = name),
                    size = 3, color = "grey20", repel = TRUE) +
-    scale_color_gradient(low = "lightblue1", high = "royalblue3") +
+    scale_color_gradient2(low = "blue", high = "red", na.value = "grey50") +
     scale_shape_manual(values = c(15, 17, 16)) +
     theme_void()
 ggsave(
@@ -382,7 +394,3 @@ ggsave(
     plot = depdeg_colorClusteredEdgefilter_ppi_plot,
     width = 12, height = 10, unit = "in", dpi = 300
 )
-
-
-
-
