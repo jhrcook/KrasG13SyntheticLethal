@@ -1,5 +1,5 @@
 ---
-title: "KRAS G13 Synthetic Lethality"
+title: "*KRAS* G13D-specific Synthetic Lethality"
 author: "Joshua H. Cook"
 date: "June 11, 2019"
 output:
@@ -14,30 +14,64 @@ output:
 
 
 
-# Purpose
+# Overview
+
+**Purpose**
 
 The goal of this analysis is to identify synthetic lethal interactions with *KRAS* G13D mutations.
 
-# Data {.tabset}
+**Data**
 
-The data is from the genome-wide CRISPR-Cas9 loss-of-function screen named "Achilles" from the [DepMap Project](https://depmap.org/portal/). This data was downloaded, cleaned, and made available in the ['tidy_Achilles' GitHub repository](https://github.com/jhrcook/tidy_Achilles).
+The [Dependency Mapping](https://depmap.org/portal/) project ([Howard *et al.*, 2016](http://symposium.cshlp.org/content/81/237.long); [Tsherniak *et al.*, 2017](https://www.cell.com/cell/abstract/S0092-8674(17)30651-7); [Meyers *et al.*, 2017](https://www.nature.com/articles/ng.3984)) has screened over 500 cell lines from the [Cancer Cell Line Encyclopedia (CCLE)](https://portals.broadinstitute.org/ccle) through Achilles ([Cheung *et al.*, 2011](http://www.pnas.org/cgi/pmidlookup?view=long&pmid=21746896)). Achilles is a genome-wide CRISPR-Cas9 loss-of-function screen where each gene in every cell line was knocked out with 6 different guide RNA (using the Avana sgRNA library ([Doench *et al.*, 2014](https://doi.org/10.1038/nbt.3026); [Doench *et al.*, 2016](https://www.nature.com/articles/nbt.3437))).
+
+The source of the data and some descriptive figures are available in the [Data](#Data) section, below.
+
+**Modeling**
+
+I present below in [Linear Models](#LinearModels) several models that all try to explain the effect of knocking out a gene using the features of the cell line. Thus, one model is constructed for each targeted gene. The attributes of the cell lines that I consider are the *KRAS* allele, whether the target gene is mutated, and the RNA expression of the target gene. For most models, the *KRAS* alleles are grouped into *KRAS* WT, *KRAS* G12, and *KRAS* G13D, though I also have an example of only using *KRAS* G12 and G13D, and an example of using *KRAS* WT, G12*D*, and G13D.
+
+In each model, I separate the genes with interactions with *KRAS* G13D into two groups, those where knocking out the gene had a larger depletion effect (stronger genetic dependency) and those with a weaker depletion effect (reduced genetic dependency). While the former is more relevant to the study at hand, the latter can still provide some insight into the differences between *KRAS* G12 and G13D alleles.
+
+For each model, I created a set of figures to describe the results (though I was not perfectly consistent with creating each figure for each model). They are available in tabs within each model's subsection.
+
+**Additional Analysis**
+
+I present various follow-up analyses in the section [Additional analysis of hits](#Additionalanalysisofhits) to provide some insight into the genes identified to have synthetic lethal interactions with *KRAS* G13D. This includes the frequency of co-mutation with the *KRAS* alleles in human tumors, a functional enrichment (rather unfruitful), an inspection of the protein-protein interaction network that contained the genes, and a comparison to the results of the differential gene expression between *KRAS* G12D and *KRAS* G13D mice.
+
+Finally, I provide a list of genes that I would recommend using for further validation in the [Final conclusions](#Finalconclusions) subsection. I also provide some brief information about each gene and links to their [UniProt](https://www.uniprot.org) and [STRING](https://string-db.org/cgi/input.pl?sessionId=JnVnsTgQxlQZ&input_page_show_search=on) pages.
+
+**Predicting *KRAS* mutation using depletion effects**
+
+(The [Predicting *KRAS* mutation using depletion effects](#PredictingKRASmutationusingdepletioneffects) section is not specifically relevant to the current study.)
+
+Instead of estimating the effect of targeting a gene using features of the cell lines, I created models to predict whether *KRAS* was WT or mutated in a cell line by the effects of knocking out each of its genes. Eventually, I was able to predict whether *KRAS* was mutated or not with high fidelity using about 25 genes (not including *KRAS*). These genes may reveal some features of mutant *KRAS*, though further analysis is required.
+
+
+# Data {#Data .tabset}
+
+The data is from the genome-wide CRISPR-Cas9 loss-of-function screen Achilles from the [DepMap Project](https://depmap.org/portal/). This data was downloaded, cleaned, and made available in the ['tidy_Achilles' GitHub repository](https://github.com/jhrcook/tidy_Achilles).
 
 ## The cell lines
 
-The following plot shows the number of cell lines in CCLE with either a *KRAS* or *NRAS* mutation (only showing alleles found in at least two cell lines of a disease).
+The following plot shows the number of cell lines in the CCLE with either a *KRAS*, *NRAS*, or *HRAS* mutation (only showing alleles found in at least two cell lines from the same anatomical location).
 
 ![](images/data_prep/ras_muts_plot.png)
 
-However, the DepMap has yet to screen all of the CCLE cell lines. The following only includes the cell lines used in Achilles.
+However, the DepMap has yet to screen all of the CCLE cell lines. The following only includes the cell lines that have passed through Achilles.
 
 ![](images/data_prep/depmap_ras_muts_plot.png)
 
 
 ```r
-ids_screened <- readRDS(file.path("data", "Achilles_gene_effect.tib")) %>%
+achilles_data <- readRDS(file.path("data", "Achilles_gene_effect.tib"))
+
+ids_screened <- achilles_data %>%
     pull(dep_map_id) %>%
     unlist() %>%
     unique()
+    
+genes_total <- achilles_data %>% pull(gene) %>% n_distinct()
+genes_used <- readRDS(file.path("model_results", "linear_model_1_data.rds")) %>% pull(gene) %>% n_distinct()
 ```
 
 As of the 2019Q2 release, there are 563 screened cell lines. The most frequent allele is *KRAS* G12D, and the organs with the most frequent *KRAS* mutants are colorectal, lung, and pancreas. The following table shows the number of cell lines with each *KRAS* allele.
@@ -64,20 +98,21 @@ readRDS(file.path("data", "ras_mutants_info.tib")) %>%
 
 ## The dependency scores
 
-Below are the distributions of the depletion scores in the three organs with the highest frequency of *KRAS* mutations.
-
-![](images/data_prep/depmap_dist_plot.png)
+Below are the distributions of the depletion scores in the three organs with the highest frequency of *KRAS* mutations. Note that a negative score indicates depletion of the cell line after the knock-out event.
 
 They are not normally distributed. Instead, most of the values lie near 0, indicating that most knock-out events had little impact on the viability of the cell lines (as expected). There is a tail to the left filled with the genes that did have an effect when knocked-out.
 
+![](images/data_prep/depmap_dist_plot.png)
 
-# Linear model
+
+
+# Linear Models {#LinearModels}
 
 (Analysis conducted in `subscripts/linear_model.R`.)
 
 For all of the following analyses, these two conditions were met:
 
-1. Only genes that caused a depletion to -0.25 or lower in at least one cell line were used.
+1. Only genes that caused a depletion score of -0.25 or lower in at least one cell line were used. This decreased the number of genes used from 17634 to 13993.
 2. Cell lines were not used if they had multiple *KRAS* mutations or a mutation in *NRAS* or *A/B/CRAF*.
 
 
@@ -87,11 +122,11 @@ The first attempt at modeling the data used a standard linear model to estimate 
 
 ### Volcano plot of *KRAS* G12 - G13D estimate
 
-The volcano plot below shows the difference in the estimates for *KRAS* G12 and *KRAS* G13D and the log-transformed BH FDR-adjusted p-value (q-value) of the model. The labeled genes had a model q-value less than 0.20 and a difference in estimate of magnitude greater than 0.2. The points to the left (blue) had a stronger depletion effect in *KRAS* G12 mutants where the points to the right (red) had a stronger depletion effect in *KRAS* G13D.
-
-![](images/linear_model/model6_DiffEstimateVolcano_plot.png)
+The volcano plot below shows the difference in the estimates for *KRAS* G12 and *KRAS* G13D and the log-transformed Benjamini-Hochberg FDR-adjusted p-value (hereinafter referred to as q-value) of the model. The labeled genes had a model q-value less than 0.20 and a difference in estimate of magnitude greater than 0.2. The points to the left (blue) had a stronger depletion effect in *KRAS* G12 mutants where the points to the right (red) had a stronger depletion effect in *KRAS* G13D.
 
 The genes with very low model q-values but little difference between *KRAS* G12 and G13D estimates (middle of the x-axis and high on the y-axis) were likely highly predicted by the WT covariate (i.e. the gene effect did not change much according to the *KRAS* allele).
+
+![](images/linear_model/model6_DiffEstimateVolcano_plot.png)
 
 ### Comparing coefficients of *KRAS* G12D and G13D
 
@@ -101,7 +136,7 @@ The plot below compares the coefficients fit to *KRAS* G12 (x-axis) and G13D (y-
 
 ### Genes with increased depletion with *KRAS* G13D
 
-The plot shows target genes that had a significantly stronger depletion effect in *KRAS* G13D cell lines. These genes showed increased depletion in *KRAS* G13D cell lines, had a model q-value below 0.20, and a p-value for the G13D covariate below 0.05.
+This figure shows target genes that had a significantly stronger depletion effect in *KRAS* G13D cell lines. These genes showed increased depletion in *KRAS* G13D cell lines, had a model q-value below 0.20, and a p-value for the G13D coefficient below 0.05.
 
 ![](images/linear_model/model6_G13dDepletion_plot.png)
 
@@ -114,15 +149,14 @@ On the other hand, the following plot shows target genes that had a significantl
 
 ## *KRAS* G13D vs *KRAS* G12 vs. WT and target gene mutation {.tabset}
 
-The next attempt at modeling the data used a standard linear model to estimate the depletion effect given the *KRAS* allele and mutation status of the target gene. The model had two covariates, *KRAS* allele and the mutational status of the target gene (binary). The alleles were grouped as *KRAS* codon 12, *KRAS* G13D, or WT. Only genes that caused a depletion to -0.25 or lower in at least one cell line were used.
+The next attempt at modeling the data used a standard linear model to estimate the depletion effect given the *KRAS* allele and mutation status of the target gene. The model had two covariates, *KRAS* allele and the mutational status of the target gene (binary). The alleles were grouped as *KRAS* codon 12, *KRAS* G13D, or WT.
 
 ### Volcano plot of *KRAS* G12 - G13D estimate
 
-The volcano plot below shows the difference in the estimates for *KRAS* G12 and *KRAS* G13D and the log-transformed BH FDR-adjusted p-value (q-value) of the model. The labeled genes had a model q-value less than 0.20 and a difference in estimate of magnitude greater than 0.2. The points to the left (blue) had a stronger depletion effect in *KRAS* G12 mutants where the points to the right (red) had a stronger depletion effect in *KRAS* G13D.
+The volcano plot below shows the difference in the estimates for *KRAS* G12 and *KRAS* G13D and the log-transformed q-value of the model. The labeled genes had a model q-value less than 0.20 and a difference in estimate of magnitude greater than 0.2. The points to the left (blue) had a stronger depletion effect in *KRAS* G12 mutants where the points to the right (red) had a stronger depletion effect in *KRAS* G13D.
 
 ![](images/linear_model/model1_DiffEstimateVolcano_plot.png)
 
-The genes with very low model q-values but little difference between *KRAS* G12 and G13D estimates (middle of the x-axis and high on the y-axis) were likely highly predicted by the WT covariate (i.e. the gene effect did not change much according to the *KRAS* allele) or mutational status.
 
 ### Genes with increased depletion with *KRAS* G13D
 
@@ -146,15 +180,15 @@ I have additionally fit the same model without WT samples, thus the intercept wa
 
 I ran the same model as before, including *KRAS* WT, G12, and G13D and whether the target gene was mutated or not, now including the RNA expression levels of the target gene in each cell line. 
 
-### Volcano plot of *KRAS* G13D estimate
+### Volcano plot of *KRAS* G13D coefficient
 
-The following plot is a volcano with the *KRAS* G13D effect on the x-axis and log-transformed p-value of the *KRAS* G13D coefficient on the y-axis. The highlighted genes had an overall model q-value below 0.20, *KRAS* G13D p-value below 0.05, and a *KRAS* G13D estimate of magnitude greater than 0.20.
+The following plot is a volcano with the *KRAS* G13D effect on the x-axis and log-transformed p-value of the *KRAS* G13D coefficient on the y-axis. The highlighted genes had an overall model q-value below 0.20, *KRAS* G13D p-value below 0.05, and a *KRAS* G13D coefficient of magnitude greater than 0.20.
 
 ![](images/linear_model/model3_G13dVolcano_plot.png)
 
-### Volcano plot of *KRAS* G12 - G13D estimate
+### Volcano plot of *KRAS* G12 - G13D coefficient
 
-The volcano plot below shows the difference in the estimates for *KRAS* G12 and *KRAS* G13D and the log-transformed BH FDR-adjusted p-value (q-value) of the model. The labeled genes had a model q-value less than 0.20 and a difference in estimate of magnitude greater than 0.2. The points to the left (blue) had a stronger depletion effect in *KRAS* G12 mutants where the points to the right (red) had a stronger depletion effect in *KRAS* G13D.
+The volcano plot below shows the difference in the coefficients for *KRAS* G12 and *KRAS* G13D and the log-transformed q-value of the model. The labeled genes had a model q-value less than 0.20 and a difference in coefficient of magnitude greater than 0.2. The points to the left (blue) had a stronger depletion effect in *KRAS* G12 mutants where the points to the right (red) had a stronger depletion effect in *KRAS* G13D.
 
 ![](images/linear_model/model3_DiffEstimateVolcano_plot.png)
 
@@ -184,18 +218,18 @@ The following plots show the trend of gene expression with depletion score for m
 
 ### Effect of mutational status of the target gene
 
-Inspecting the target genes that had statistically significant coefficients for the mutational status covariate (non-synonymous mutations only) revealed that many models were significant with only one or two cell lines with a mutation. The plot below shows the models with significant mutational status coefficients with an effect size of at least 0.15 in magnitude and at least four cell lines with a mutation in the gene.
+Inspecting the target genes that had statistically significant coefficients for the mutational status covariate (non-synonymous mutations only) revealed that many models were significant with only one or two cell lines with a mutation. The plot below shows the models with significant mutational status coefficients with an effect size of at least 0.15 in magnitude and at least 4 cell lines with a mutation in the gene.
 
 ![](images/linear_model/mutation_effect_3.png)
 
 
-## Conditional mutational status {.tabset}
+## Conditional mutational status {#Conditionalmutationalstatus .tabset}
 
-From the previous observation that some models were fitting significant and relatively large coefficients to the mutational status covariate when only couple of cell lines had a mutation, I restricted the inclusion of this covariate to models of genes mutated in at least four cell lines. 
+From the previous observation that some models were fitting significant and relatively large coefficients to the mutational status covariate when only couple of cell lines had a mutation, I restricted the inclusion of this covariate to models of genes mutated in at least 4 cell lines. 
 
-Save for "", the following plots have the same layout as in previous models, so are not specifically explained in each tab.
+Save for "Confidence intervals of coefficients", the following plots have the same layout as in previous models, so are not specifically explained in each tab.
 
-### Volcano plot of *KRAS* G12 - G13D estimate
+### Volcano plot of *KRAS* G12 - G13D coefficient
 
 ![](images/linear_model/model4_DiffEstimateVolcano_plot.png)
 
@@ -213,16 +247,18 @@ Save for "", the following plots have the same layout as in previous models, so 
 
 ### Confidence intervals of coefficients
 
-95% confidence intervals were bootstrapped. The plot below shows the model coefficients and the 95% CI for the *KRAS* G12 and G13D in each gene found to induce a greater depletion effect in *KRAS* G13D cell lines.
+95% confidence intervals were bootstrapped for the genes with stronger depletion effects in *KRAS* G13D cell lines. The plot below shows the model coefficients and the 95% CI for the *KRAS* G12 and G13D in each of these genes.
 
 ![](images/sample_CI/coef_95CI.png)
 
 
 ## Only comparing *KRAS* G12D to G13D {.tabset}
 
-Instead of including all codon 12 *KRAS* mutants in one group, the following model is the same as used in the previous section, though only using *KRAS* G12D. This may reduce variability of the codon 12 group if the various allele that constitute it are quite different.
+Instead of including all codon 12 *KRAS* mutants in one group, the following model is the same as used in the previous section, though only using *KRAS* G12D. This may reduce variability of the codon 12 group if the various alleles that constitute it are quite different.
 
 ### Volcano plot of *KRAS* G12D - G13D estimate
+
+The left and right panels are zoomed in to the highlighted points of the center panel.
 
 ![](images/linear_model/model5_DiffEstimateVolcanoTiled_plot.png)
 
@@ -239,11 +275,11 @@ Instead of including all codon 12 *KRAS* mutants in one group, the following mod
 ![](images/linear_model/model5_G13dSurvival_plot.png)
 
 
-## Additional Analysis of hits {.tabset}
+## Additional analysis of hits {#Additionalanalysisofhits .tabset}
 
 ### Co-mutation in human tumors
 
-I looked at the frequency of co-mutation of the genes identified by the linear model with *KRAS* G12, *KRAS* G13D, and WT in human tumor samples from COAD, LUAD, and PAAD. Below is a heatmap colored by co-mutation frequency. The numbers in the cells indicate the number of co-mutation events.
+If there is a synthetic lethal interaction between some gene and specifically *KRAS* G13D, we would expect to see fewer co-mutation events in human tumor samples. Therefore, I looked at the frequency of co-mutation of the genes identified by the linear model with *KRAS* G12, *KRAS* G13D, and WT in human tumor samples from COAD, LUAD, and PAAD. Below is a heatmap colored by co-mutation frequency. The numbers in the cells indicate the number of co-mutation events.
 
 ![](images/linear_model/comut_heatmap.png)
 
@@ -263,27 +299,31 @@ With the co-mutation frequencies rescaled within each gene.
 
 ![](images/linear_model/comut_pheatmap_up_rescaled.png)
 
+There do seem to be some cases of reduced co-mutation frequency in the *KRAS* G13D tumor samples. **These data should be taken into account when deciding on which genes to pursue *in vivo*.**
+
 ### Functional enrichment
 
-I used the ['enrichR'](https://cran.r-project.org/web/packages/enrichR/index.html) package to identify functionalities enriched in the genes that had G13D-specific genetic dependencies. The bar-plot below shows the identified functions along the y-axis and the corresponding p-value along the x-axis. The fraction at the end of each bar is the fraction of genes associated with the term that are in the list. The genes along the bar are those that are associated with the term.
+I used the ['enrichR'](https://cran.r-project.org/web/packages/enrichR/index.html) ([Chen *et al.*, 2013](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-14-128); [Kuleshov *et al.*, 2016](https://academic.oup.com/nar/article/44/W1/W90/2499357)) package to identify functionalities enriched in the genes that had G13D-specific genetic dependencies. The bar-plot below shows the identified functions along the y-axis and the corresponding p-value along the x-axis. The fraction at the end of each bar is the fraction of genes associated with the term that are in the list. The genes along the bar are those that are associated with the term.
 
 ![](images/hit_annotation/fxnal_anno_plot.png)
 
 ### PPI subnetwork
 
-I extracted the subnetwork of the protein-protein interaction network (source: [High-quality INTeractomes database](http://hint.yulab.org); nodes = genes, edges = physical interactions) that contained most of the genes that had G13D-specific genetic dependencies and any other nodes that are connected to at least three of these genes. The two plots below show the same nodes, but the second only includes the physical interactions with the genes with genetic effects.
+I extracted the subnetwork of the protein-protein interaction network (source: [High-quality INTeractomes database](http://hint.yulab.org); nodes = genes, edges = physical interactions) that contained most of the genes that had G13D-specific genetic dependencies and any other nodes that are connected to at least three of these genes ("bridge" nodes).
 
-The shade of the edge indicates the how many of the nodes it connects were from the genetic dependency analysis (either "both", "one", or "neither"). The color of the node indicates the coefficient; a positive coefficient (red) indicates that the targeting of the gene was predictive of *reduced* lethality, and blue the opposite. The size of the node indicates its centrality in the network (an indicator of importance).
+The two plots below show the same nodes, but the second only includes the physical interactions with the genes with genetic effects.
+
+The shade of the edge indicates how many of the nodes it connects were from the genetic dependency analysis (either "both", "one", or "neither"). The color of the node indicates the coefficient; a positive coefficient (red) indicates that the targeting of the gene was predictive of *reduced* lethality, and blue the opposite. The size of the node indicates its centrality in the network (an indicator of importance).
 
 ![](images/hit_annotation/dep_ppi_plot.png)
 
 ![](images/hit_annotation/dep_filtedges_ppi_plot.png)
 
-The following plot of the subnetwork of the PPI shows only the nodes of genes identified to have a G13D genetic dependency.
+The following plot of the subnetwork of the PPI shows only the nodes of genes identified to have a *KRAS* G13D genetic dependency.
 
 ![](images/hit_annotation/def_onlydeps_ppi_plot.png)
 
-The subnetwork can be dissected by clustering.
+The subnetwork can be dissected by clustering to extract modules within the subnetwork.
 
 ![](images/hit_annotation/dep_clustered_ppi_plot.png)
 
@@ -291,19 +331,21 @@ The degree of a node (number of neighbors) can be another indication of importan
 
 ![](images/hit_annotation/dep_scatterCentralityCoef_plot.png)
 
+The relatively close proximity of the genes identified to have genetic interactions with *KRAS* G13D to each other provides confidence that these effects are real. Further, the clusters in the above plot may identify regions through which targeting multiple genes may be highly successful. **Ideally, these data should be taken into account when deciding on which genes to pursue *in vivo*.**
+
 ### Overlap with Alex (UCSF)
 
-I compared the genes identified in this analysis to those identified by Alex from UCSF. There was no overlap between the genes identified by differential gene expression (DGE; q-value 0.05, log-fold change > 2) and modeling G13D-specific dependencies (model q-value < 0.2, coefficient p-value < 0.05, coefficient of magnitude > 0.15).
+I compared the genes identified in this analysis to those identified by Alex from UCSF. There was no overlap between the genes identified by differential gene expression (DGE; q-value < 0.05, log-fold change > 2) and modeling G13D-specific dependencies (model q-value < 0.2, coefficient p-value < 0.05, coefficient of magnitude > 0.15).
 
-The following figure is the volcano plot of the G13D coefficient against its p-value. The blue points are genes significantly differentially expressed in any of the mouse model DGE comparisons. The top selection of those are labeled.
+The following figure is the volcano plot of the G13D coefficient against its p-value. The blue points are genes significantly differentially expressed in *any* of the mouse model DGE comparisons. The top selection of those are labeled.
 
 ![](images/overlap_alex/comparison_volcano.png)
 
-I conducted a similar extraction of the PPI subnetwork for the differentially expressed genes (DEG).
+I conducted a similar extraction of the PPI subnetwork for the differentially expressed genes (DEG). The yellow nodes are DEG and the gray nodes are bridge nodes between them (edges connecting bridge nodes have been removed for visualization purposes).
 
 ![](images/overlap_alex/dep_dge_ppi_plot.png)
 
-I merged this with the same network from the G13D-dependent genes.
+I merged this with the same network from the G13D-dependent genes (labeled in green).
 
 ![](images/overlap_alex/dep_DepDegBridgeNosingles_ppi_plot.png)
 
@@ -311,7 +353,9 @@ The plot below shows the same subnetwork, just *KRAS* is placed at the center an
 
 ![](images/overlap_alex/dep_DepDegBridgeKrasfocus_ppi_plot.png)
 
-However, if I only use the differentially expressed genes from the G12D vs G13D comparison, no subnetwork can be built - none of the nodes are connected by bridging nodes like was seen with the genes from the dependency analysis. Some of the genes do fall within the subnetwork extracted from the dependency analysis. The plot below shows the PPI subnetwork comprised of the genes with G13D dependencies (triangle), those found to be differentially expressed between *KRAS* G12D and G13D (squares), and any "bridge" node that is connected to at least 3 of those genes (grey circles).
+**However, if I only use the differentially expressed genes from the G12D vs G13D comparison, no subnetwork can be built - none of the nodes are connected by bridging nodes like was seen with the genes from the dependency analysis.** Some of the genes do fall within the subnetwork extracted from the dependency analysis. The plot below shows the PPI subnetwork comprised of the genes with G13D dependencies (triangle), those found to be differentially expressed between *KRAS* G12D and G13D (squares), and any "bridge" node that is connected to at least 3 of those genes (gray circles).
+
+The coloration is decided by the log-fold change in the DGE analysis or the *KRAS* G13D coefficient in the dependency analysis. Both values were scaled from -1 to 1 across all genes in the subnetwork. A negative log-fold change or coefficient is in blue and a positive log-fold change or coefficient is in red.
 
 ![](images/overlap_alex/depdeg_color_ppi_plot.png)
 
@@ -320,27 +364,27 @@ The following plot is of the same subnetwork, but clustered by connectivity. The
 ![](images/overlap_alex/depdeg_colorClusteredEdgefilter_ppi_plot.png)
 
 
-## Final conclusions
+## Final conclusions {#Finalconclusions}
 
-I propose that the model using the *KRAS* allele, whether the target gene is mutated, and the expression of the target gene is the nest choice of those tried, above. Further, I believe that grouping the *KRAS* codon 12 mutants into a single group is a better option than only using *KRAS* G12D to compare against *KRAS* G13D. My reasoning for this is that the largest effects are likely between mutants of different codon, and not allele. Thus, considering the number of samples available, a study comparing *KRAS* G12D and G13D is likely to be underpowered, resulting in reduced confidence in the results.
+I propose that the [model using the *KRAS* allele, whether the target gene is mutated, and the expression of the target gene](#Conditionalmutationalstatus) is the best choice of those tried. Further, I believe that grouping the *KRAS* codon 12 mutants into a single group is a better option than only using *KRAS* G12D to compare against *KRAS* G13D. My reasoning for this is that the largest effects are likely between mutants of different codon, and not allele. Thus, considering the number of samples available, a study comparing *KRAS* G12D and G13D is likely to be underpowered, resulting in reduced confidence in the results.
 
 Below are the genes I would recommend further pursuing as *KRAS* G13D-specific synthetic lethal targets. The following are the factors I tried to account for when making the decision:
 
 1. The first filtration step was on the model: model q-value < 0.20, *KRAS* G13D coefficient p-value < 0.05, and *KRAS* G13D coefficient < -0.15. 
-2. There is potentially a reduced co-mutation in human tumor samples.
+2. There is potentially a reduced frequency of co-mutation in human tumor samples.
 3. There is stronger depletion effect in *KRAS* G13D cell lines than in either *KRAS* G12D or WT cell lines, but the effect is not too strong (>1) in all cell lines (though the effect may be stronger in the *KRAS* G13D cell lines, targeting the gene would still have a strong lethal effect in all cell lines).
 4. Account for the spread of the depletion scores of the cell lines using the box-plots and the 95% CI of the coefficients.
 
-| Gene        | co-mutation | depletion        | CI            |
-|-------------|-------------|------------------|---------------|
-| **ART1**    | Yes         | specific         | specific      |
-| **BET1L**   | Yes         | specific         | specific      |
-| **NPHP1**   | Yes         | specific         | high variance |
-| **NUP88**   | Yes         | very strong      | specific      |
-| **PROSER1** | Yes         | small difference | high variance |
-| **SCARA3**  | Yes         | specific         | specific      |
-| **UBE2S**   | Yes         | small difference | specific      |
-| **ZBTB17**  | Yes         | small difference | specific      |
+| Gene        | low co-mutation | depletion        | CI            |
+|-------------|-----------------|------------------|---------------|
+| **ART1**    | Yes             | specific         | specific      |
+| **BET1L**   | Yes             | specific         | specific      |
+| **NPHP1**   | Yes             | specific         | high variance |
+| **NUP88**   | Yes             | very strong      | specific      |
+| **PROSER1** | Yes             | small difference | high variance |
+| **SCARA3**  | Yes             | specific         | specific      |
+| **UBE2S**   | Yes             | small difference | specific      |
+| **ZBTB17**  | Yes             | small difference | specific      |
 
 ### Some information on the genes {.tabset}
 
@@ -433,9 +477,14 @@ Full name: **Zinc finger and BTB domain-containing protein 17**
 Interactions with MYC, SMAD 2/3/4, and DNMT3A (among others).
 
 
-# Predicting *KRAS* mutation using depletion effects {.tabset}
+
+
+---
+
+# Predicting *KRAS* mutation using depletion effects {#PredictingKRASmutationusingdepletioneffects .tabset}
 
 Instead of using the mutational status of *KRAS* to explain the depletion effect of each targeted gene in a separate model, I tried to predict the status of *KRAS* using all of the depletion scores in one model.
+
 
 ## LASSO-regularized regression
 
@@ -451,6 +500,7 @@ For comparison, I ran a standard linear model for each gene using *KRAS* as the 
 
 ![](images/predict_rasallele/predict_rasallele_linear_model_volcano.png)
 
+
 ## Random Forrest Classifier
 
 I tried using a random forest classifier to classify whether KRAS was WT or mutated in a cell line based off of the depletion effects of all genes, but this had poor accuracy (around 50%). 
@@ -460,7 +510,6 @@ I tried using a random forest classifier to classify whether KRAS was WT or muta
 However, if only the genes from the LASSO-regularized regression are used, the training error rate drops to 6.25% and the accuracy with the test data is 1.
 
 ![](images/predict_rasallele/randomforest2_model_plot.png){width=400px} ![](images/predict_rasallele/randomforest2_varImpPlot_plot.png){width=400px}
-
 
 
 ## Conclusion
