@@ -312,8 +312,8 @@ depAndDeg_ppi <- hint_ppi %N>%
 
 # G12DvsG13D and dependency genes; colored by coefficient or logFC
 depdeg_color_ppi_plot <- depAndDeg_ppi %N>%
-    mutate(node_grp = ifelse(is_dep, "dep", "neither"),
-           node_grp = ifelse(is_deg, "deg", node_grp)) %>%
+    mutate(node_grp = ifelse(is_dep, "dependency", "bridge"),
+           node_grp = ifelse(is_deg, "DGE", node_grp)) %>%
     filter(is_either | is_bridge_either) %>%
     filter(centrality_degree(mode = "all") > 0) %>%
     mutate(point_color = ifelse(
@@ -327,8 +327,10 @@ depdeg_color_ppi_plot <- depAndDeg_ppi %N>%
     geom_node_text(aes(label = name),
                    size = 3, color = "grey20", repel = TRUE) +
     scale_color_gradient2(low = "blue", high = "red", na.value = "grey50") +
-    scale_shape_manual(values = c(15, 17, 16)) +
-    theme_void()
+    scale_shape_manual(values = c(16, 17, 15)) +
+    theme_void() +
+    labs(color = "node color",
+         shape = "group")
 ggsave(
     filename = file.path("images", "overlap_alex", "depdeg_color_ppi_plot.png"),
     plot = depdeg_color_ppi_plot,
@@ -337,8 +339,8 @@ ggsave(
 
 # G12DvsG13D and dependency genes; colored by coefficient or logFC; clustered
 depdeg_colorClustered_ppi_plot <- depAndDeg_ppi %N>%
-    mutate(node_grp = ifelse(is_dep, "dep", "neither"),
-           node_grp = ifelse(is_deg, "deg", node_grp)) %>%
+    mutate(node_grp = ifelse(is_dep, "dependency", "bridge"),
+           node_grp = ifelse(is_deg, "DGE", node_grp)) %>%
     filter(is_either | is_bridge_either) %>%
     filter(centrality_degree(mode = "all") > 0) %>%
     mutate(cls = group_spinglass()) %>%
@@ -354,8 +356,10 @@ depdeg_colorClustered_ppi_plot <- depAndDeg_ppi %N>%
     geom_node_text(aes(label = name),
                    size = 3, color = "grey20", repel = TRUE) +
     scale_color_gradient2(low = "blue", high = "red", na.value = "grey50") +
-    scale_shape_manual(values = c(15, 17, 16)) +
-    theme_void()
+    scale_shape_manual(values = c(16, 17, 15)) +
+    theme_void() +
+    labs(color = "node color",
+         shape = "group")
 ggsave(
     filename = file.path(
         "images", "overlap_alex", "depdeg_colorClustered_ppi_plot.png"
@@ -367,8 +371,8 @@ ggsave(
 # G12DvsG13D and dependency genes; colored by coefficient or logFC
 # clustered and removed bride-to-bridge edges
 depdeg_colorClusteredEdgefilter_ppi_plot <- depAndDeg_ppi %N>%
-    mutate(node_grp = ifelse(is_dep, "dep", "neither"),
-           node_grp = ifelse(is_deg, "deg", node_grp)) %>%
+    mutate(node_grp = ifelse(is_dep, "dependency", "bridge"),
+           node_grp = ifelse(is_deg, "DGE", node_grp)) %>%
     filter(is_either | is_bridge_either) %>%
     filter(centrality_degree(mode = "all") > 0) %>%
     mutate(cls = group_spinglass()) %>%
@@ -385,8 +389,10 @@ depdeg_colorClusteredEdgefilter_ppi_plot <- depAndDeg_ppi %N>%
     geom_node_text(aes(label = name),
                    size = 3, color = "grey20", repel = TRUE) +
     scale_color_gradient2(low = "blue", high = "red", na.value = "grey50") +
-    scale_shape_manual(values = c(15, 17, 16)) +
-    theme_void()
+    scale_shape_manual(values = c(16, 17, 15)) +
+    theme_void() +
+    labs(color = "node color",
+         shape = "group")
 ggsave(
     filename = file.path(
         "images", "overlap_alex", "depdeg_colorClusteredEdgefilter_ppi_plot.png"
