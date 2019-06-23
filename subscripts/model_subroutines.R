@@ -192,7 +192,7 @@ ggplot_G13Dvolcano_wrapper <- function(tib) {
 
 #### ---- Tidygraph helpers ---- ####
 
-# get neiborhood with a logical filter `lgl_filter`
+# get neighborhood with a logical filter `lgl_filter`
 # pass lgl_filter values using `expr(bool_col1 | bool_col2 & x == y)`
 is_bridging_node <- function(neighborhood,
                              lgl_filter,
