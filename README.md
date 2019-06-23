@@ -355,7 +355,7 @@ The plot below shows the same subnetwork, just *KRAS* is placed at the center an
 
 **However, if I only use the differentially expressed genes from the G12D vs G13D comparison, no subnetwork can be built - none of the nodes are connected by bridging nodes like was seen with the genes from the dependency analysis.** Some of the genes do fall within the subnetwork extracted from the dependency analysis. The plot below shows the PPI subnetwork comprised of the genes with G13D dependencies (triangle), those found to be differentially expressed between *KRAS* G12D and G13D (squares), and any "bridge" node that is connected to at least 3 of those genes (gray circles).
 
-The coloration is decided by the log-fold change in the DGE analysis or the *KRAS* G13D coefficient in the dependency analysis. Both values were scaled from -1 to 1 across all genes in the subnetwork. A negative log-fold change or coefficient is in blue and a positive log-fold change or coefficient is in red.
+The coloration is decided by the log-fold change in the DGE analysis or the *KRAS* G13D coefficient in the dependency analysis. Both values were scaled from -1 to 1 across all genes in the subnetwork. A negative log-fold change or coefficient is in blue and a positive log-fold change or coefficient is in red. A negative log-fold change means there was greater expression in the *KRAS* G13D mouse than the *KRAS* G12D mouse.
 
 ![](images/overlap_alex/depdeg_color_ppi_plot.png)
 
@@ -379,12 +379,14 @@ Below are the genes I would recommend further pursuing as *KRAS* G13D-specific s
 |-------------|-----------------|------------------|---------------|
 | **ART1**    | Yes             | specific         | specific      |
 | **BET1L**   | Yes             | specific         | specific      |
+| **ERMARD**  | No              | specific         | specific      |
 | **NPHP1**   | Yes             | specific         | high variance |
 | **NUP88**   | Yes             | very strong      | specific      |
 | **PROSER1** | Yes             | small difference | high variance |
 | **SCARA3**  | Yes             | specific         | specific      |
 | **UBE2S**   | Yes             | small difference | specific      |
 | **ZBTB17**  | Yes             | small difference | specific      |
+
 
 ### Some information on the genes {.tabset}
 
@@ -411,6 +413,19 @@ Located on the cell membrane and the sarcoplasmic reticulum membrane (in myocyte
 Full name: **BET1-like protein**
 
 "Vesicle SNARE required for targeting and fusion of retrograde transport vesicles with the Golgi complex. Required for the integrity of the Golgi complex (By similarity)."
+
+
+#### ERMARD
+
+[![](https://img.shields.io/badge/Uniprot-ERMARD-4E9BBA.svg?style=flat&logo=microgenetics)](https://www.uniprot.org/uniprot/Q5T6L9)
+[![](https://img.shields.io/badge/STRING-ERMARD-B8B77B.svg?style=flat&logo=graphql)](https://string-db.org/cgi/network.pl?taskId=dJ1fiJDsN4He)
+
+
+Full name: **Endoplasmic reticulum membrane-associated RNA degradation protein**
+
+"May play a role in neuronal migration during embryonic development."
+
+Localized to the ER.
 
 #### NPHP1
 
@@ -477,9 +492,6 @@ Full name: **Zinc finger and BTB domain-containing protein 17**
 Interactions with MYC, SMAD 2/3/4, and DNMT3A (among others).
 
 
-
-
----
 
 # Predicting *KRAS* mutation using depletion effects {#PredictingKRASmutationusingdepletioneffects .tabset}
 
