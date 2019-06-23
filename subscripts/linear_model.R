@@ -1071,7 +1071,15 @@ readRDS(file.path("data", "gene_essentiality.tib")) %>%
     filter(gene %in% follow_mutex)
 
 final_list_of_hits <- c(
-    "ART1", "BET1L", "NPHP1", "NUP88", "PROSER1", "SCARA3", "UBE2S", "ZBTB17"
+    "ART1",
+    "BET1L",
+    "ERMARD",
+    "NPHP1",
+    "NUP88",
+    "PROSER1",
+    "SCARA3",
+    "UBE2S",
+    "ZBTB17"
 )
 
 cat("Final list of genes to use:\n")
