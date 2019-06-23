@@ -200,7 +200,7 @@ Inspecting the target genes that had statistically significant coefficients for 
 
 From the previous observation that some models were fitting significant and relatively large coefficients to the mutational status covariate when only couple of cell lines had a mutation, I restricted the inclusion of this covariate to models of genes mutated in at least four cell lines. 
 
-The following plots have the same layout as in previous models, so are not specifically explained in each tab.
+Save for "", the following plots have the same layout as in previous models, so are not specifically explained in each tab.
 
 ### Volcano plot of *KRAS* G12 - G13D estimate
 
@@ -217,6 +217,12 @@ The following plots have the same layout as in previous models, so are not speci
 ### Genes with reduced depletion with *KRAS* G13D
 
 ![](images/linear_model/model4_G13dSurvival_plot.png)
+
+### Confidence intervals of coefficients
+
+95% confidence intervals were bootstrapped. The plot below shows the model coefficients and the 95% CI for the *KRAS* G12 and G13D in each gene found to induce a greater depletion effect in *KRAS* G13D cell lines.
+
+![](images/sample_CI/coef_95CI.png)
 
 
 ## Only comparing *KRAS* G12D to G13D {.tabset}
@@ -319,6 +325,119 @@ However, if I only use the differentially expressed genes from the G12D vs G13D 
 The following plot is of the same subnetwork, but clustered by connectivity. The edges between "bridge" nodes have been removed.
 
 ![](images/overlap_alex/depdeg_colorClusteredEdgefilter_ppi_plot.png)
+
+
+## Final conclusions
+
+I propose that the model using the *KRAS* allele, whether the target gene is mutated, and the expression of the target gene is the nest choice of those tried, above. Further, I believe that grouping the *KRAS* codon 12 mutants into a single group is a better option than only using *KRAS* G12D to compare against *KRAS* G13D. My reasoning for this is that the largest effects are likely between mutants of different codon, and not allele. Thus, considering the number of samples available, a study comparing *KRAS* G12D and G13D is likely to be underpowered, resulting in reduced confidence in the results.
+
+Below are the genes I would recommend further pursuing as *KRAS* G13D-specific synthetic lethal targets. The following are the factors I tried to account for when making the decision:
+
+1. The first filtration step was on the model: model q-value < 0.20, *KRAS* G13D coefficient p-value < 0.05, and *KRAS* G13D coefficient < -0.15. 
+2. There is potentially a reduced co-mutation in human tumor samples.
+3. There is stronger depletion effect in *KRAS* G13D cell lines than in either *KRAS* G12D or WT cell lines, but the effect is not too strong (>1) in all cell lines (though the effect may be stronger in the *KRAS* G13D cell lines, targeting the gene would still have a strong lethal effect in all cell lines).
+4. Account for the spread of the depletion scores of the cell lines using the box-plots and the 95% CI of the coefficients.
+
+| Gene        | co-mutation | depletion        | CI            |
+|-------------|-------------|------------------|---------------|
+| **ART1**    | Yes         | specific         | specific      |
+| **BET1L**   | Yes         | specific         | specific      |
+| **NPHP1**   | Yes         | specific         | high variance |
+| **NUP88**   | Yes         | very strong      | specific      |
+| **PROSER1** | Yes         | small difference | high variance |
+| **SCARA3**  | Yes         | specific         | specific      |
+| **UBE2S**   | Yes         | small difference | specific      |
+| **ZBTB17**  | Yes         | small difference | specific      |
+
+### Some information on the genes {.tabset}
+
+#### ART1
+
+[![](https://img.shields.io/badge/Uniprot-ART1-4E9BBA.svg?style=flat&logo=microgenetics)](https://www.uniprot.org/uniprot/P52961)
+[![](https://img.shields.io/badge/STRING-ART1-B8B77B.svg?style=flat&logo=graphql)](https://string-db.org/network/9606.ENSP00000250693)
+
+
+Full name: **GPI-linked NAD(P)(+)--arginine ADP-ribosyltransferase 1**
+
+"Has ADP-ribosyltransferase activity toward GLP1R."
+
+Potential role with PARP1 (STRING) and SIRT2 (Biogrid).
+
+Located on the cell membrane and the sarcoplasmic reticulum membrane (in myocytes)
+
+#### BET1L
+
+[![](https://img.shields.io/badge/Uniprot-BET1L-4E9BBA.svg?style=flat&logo=microgenetics)](https://www.uniprot.org/uniprot/Q9NYM9)
+[![](https://img.shields.io/badge/STRING-BET1L-B8B77B.svg?style=flat&logo=graphql)](https://string-db.org/cgi/network.pl?taskId=Vh3EGnP83jPw)
+
+
+Full name: **BET1-like protein**
+
+"Vesicle SNARE required for targeting and fusion of retrograde transport vesicles with the Golgi complex. Required for the integrity of the Golgi complex (By similarity)."
+
+#### NPHP1
+
+[![](https://img.shields.io/badge/Uniprot-NPHP1-4E9BBA.svg?style=flat&logo=microgenetics)](https://www.uniprot.org/uniprot/O15259)
+[![](https://img.shields.io/badge/STRING-NPHP1-B8B77B.svg?style=flat&logo=graphql)](https://string-db.org/cgi/network.pl?taskId=66Kx9qDato2C)
+
+
+Full name: **Nephrocystin-1**
+
+"Together with BCAR1 it may play a role in the control of epithelial cell polarity (By similarity). Involved in the organization of apical junctions in kidney cells together with NPHP4 and RPGRIP1L/NPHP8 (By similarity). Seems to help to recruit PTK2B/PYK2 (FAK) to cell matrix adhesions, thereby initiating phosphorylation of PTK2B/PYK2 and PTK2B/PYK2-dependent signaling (By similarity)."
+
+#### NUP88
+
+[![](https://img.shields.io/badge/Uniprot-NUP88-4E9BBA.svg?style=flat&logo=microgenetics)](https://www.uniprot.org/uniprot/O15259)
+[![](https://img.shields.io/badge/STRING-NUP88-B8B77B.svg?style=flat&logo=graphql)](https://string-db.org/cgi/network.pl?taskId=C8ULLHjWXG9E)
+
+
+Full name: **Nuclear pore complex protein Nup88**
+
+"Essential component of nuclear pore complex."
+
+#### PROSER1
+
+[![](https://img.shields.io/badge/Uniprot-PROSER1-4E9BBA.svg?style=flat&logo=microgenetics)](https://www.uniprot.org/uniprot/Q86XN7)
+[![](https://img.shields.io/badge/STRING-PROSER1-B8B77B.svg?style=flat&logo=graphql)](https://string-db.org/cgi/network.pl?taskId=kEiWHIQsrL53)
+
+
+Full name: **Proline and serine-rich protein 1**
+
+#### SCARA3
+
+[![](https://img.shields.io/badge/Uniprot-SCARA3-4E9BBA.svg?style=flat&logo=microgenetics)](https://www.uniprot.org/uniprot/Q6AZY7)
+[![](https://img.shields.io/badge/STRING-SCARA3-B8B77B.svg?style=flat&logo=graphql)](https://string-db.org/cgi/network.pl?taskId=n6o0v3kgRZld)
+
+
+Full name: **Scavenger receptor class A member 3**
+
+"Seems to protect cells by scavenging oxidative molecules or harmful products of oxidation."
+
+Present in the membranes of the ER and Golgi Apparatus
+
+#### UBE2S
+
+[![](https://img.shields.io/badge/Uniprot-UBE2S-4E9BBA.svg?style=flat&logo=microgenetics)](https://www.uniprot.org/uniprot/Q16763)
+[![](https://img.shields.io/badge/STRING-UBE2S-B8B77B.svg?style=flat&logo=graphql)](https://string-db.org/cgi/network.pl?taskId=GNEZ6mG1Fcgi)
+
+
+Full name: **Ubiquitin-conjugating enzyme E2 S**
+
+"Accepts ubiquitin from the E1 complex and catalyzes its covalent attachment to other proteins (PubMed:22496338). Catalyzes 'Lys-11'-linked polyubiquitination. Acts as an essential factor of the anaphase promoting complex/cyclosome (APC/C), a cell cycle-regulated ubiquitin ligase that controls progression through mitosis. Acts by specifically elongating 'Lys-11'-linked polyubiquitin chains initiated by the E2 enzyme UBE2C/UBCH10 on APC/C substrates, enhancing the degradation of APC/C substrates by the proteasome and promoting mitotic exit (PubMed:19820702, PubMed:19822757, PubMed:27259151). Also acts by elongating ubiquitin chains initiated by the E2 enzyme UBE2D1/UBCH5 in vitro; it is however unclear whether UBE2D1/UBCH5 acts as an E2 enzyme for the APC/C in vivo. Also involved in ubiquitination and subsequent degradation of VHL, resulting in an accumulation of HIF1A (PubMed:16819549). In vitro able to promote polyubiquitination using all 7 ubiquitin Lys residues, except 'Lys-48'-linked polyubiquitination (PubMed:20061386, PubMed:20622874)."
+
+Present in the cytosol. Is a component of the anaphase promoting complex (APC) in the nucleus.
+
+#### ZBTB17
+
+[![](https://img.shields.io/badge/Uniprot-ZBTB17-4E9BBA.svg?style=flat&logo=microgenetics)](https://www.uniprot.org/uniprot/Q13105)
+[![](https://img.shields.io/badge/STRING-ZBTB17-B8B77B.svg?style=flat&logo=graphql)](https://string-db.org/cgi/network.pl?taskId=0cqyYcZFyCHd)
+
+
+Full name: **Zinc finger and BTB domain-containing protein 17**
+
+"Transcription factor that can function as an activator or repressor depending on its binding partners, and by targeting negative regulators of cell cycle progression. Plays a critical role in early lymphocyte development, where it is essential to prevent apoptosis in lymphoid precursors, allowing them to survive in response to IL7 and undergo proper lineage commitment. Has been shown to bind to the promoters of adenovirus major late protein and cyclin D1 and activate transcription. Required for early embryonic development during gastrulation. Represses RB1 transcription; this repression can be blocked by interaction with ZBTB49 isoform 3/ZNF509S1 (PubMed:25245946)."
+
+Interactions with MYC, SMAD 2/3/4, and DNMT3A (among others).
 
 
 # Predicting *KRAS* mutation using depletion effects {.tabset}
