@@ -56,7 +56,7 @@ model_data <- left_join(model_data, cell_line_tib, by = "dep_map_id") %>%
 model_data %>%
     select(-gene_effect) %>%
     filter(gene %in% !!final_list_of_hits) %>%
-    mutate(target_is_mutated = ifelse(target_is_mutated, "T", ".")) %>%
+    mutate(target_is_mutated = ifelse(target_is_mutated, "mut", ".")) %>%
     spread(key = gene, value = target_is_mutated) %>%
     xlsx::write.xlsx(file = output_excel_file,
                      sheetName = "cell lines",
