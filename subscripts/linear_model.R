@@ -94,6 +94,7 @@ model_data <- dep_map %>%
 
 saveRDS(model_data, file.path("model_results", "model_data.rds"))
 
+
 #### ---- (1) gene_effect ~ WT + G12 + G13D + mut_target ---- ####
 
 # data to use for the first model
@@ -104,7 +105,7 @@ model_data1 <- model_data %>%
         ras_allele,
         levels = c("WT", "KRAS_G12", "KRAS_G13D")
     ))
-saveRDS(model_data1, "model_results/linear_model_1_data.rds")
+saveRDS(model_data1, file.path("model_results", "linear_model_1_data.rds"))
 
 
 model_data1 %>%
@@ -135,7 +136,7 @@ models1 <- model_data1 %>%
     mutate(linear_model = map(data, run_linear_model1))
 
 models1_open <- unnest_model_results(models1)
-saveRDS(models1_open, "model_results/linear_model_1.rds")
+saveRDS(models1_open, file.path("model_results", "linear_model_1.rds"))
 g13d_sigs <- models1_open %>%
     filter(q_value_model < 0.2) %>%
     filter(term == "ras_alleleKRAS_G13D" & p_value_fit < 0.05)
@@ -188,9 +189,12 @@ volcano_plot <- models1_open %>%
          color = "largest effect",
          title = "Difference in effect size of KRAS G12 and KRAS G13D",
          subtitle = "Highlighted genes had statistically significant models and a difference in estimate with magnitude of at least 0.15")
-ggsave(filename = "images/linear_model/model1_DiffEstimateVolcano_plot.png",
-       plot = volcano_plot,
-       width = 8, height = 6, units = "in", dpi = 300)
+ggsave(
+    filename = file.path(
+        "images", "linear_model", "model1_DiffEstimateVolcano_plot.png"
+    ), plot = volcano_plot,
+    width = 8, height = 6, units = "in", dpi = 300
+)
 
 
 # increased synthetic lethal interactions with G13D
@@ -200,9 +204,12 @@ g13d_depletion_plot <- model_data1 %>%
     labs(y = "depletion", color = "RAS allele",
          title = "Target genes that cause G13D-specific increased depletion",
          subtitle = "KRAS G13D was a significant predictor for whether the targeting of the indicated gene caused depletion of the cell line.")
-ggsave(filename = "images/linear_model/model1_G13dDepletion_plot.png",
-       plot = g13d_depletion_plot,
-       width = 10, height = 8, units = "in", dpi = 300)
+ggsave(
+    filename = file.path(
+        "images", "linear_model", "model1_G13dDepletion_plot.png"
+    ), plot = g13d_depletion_plot,
+    width = 10, height = 8, units = "in", dpi = 300
+)
 
 # decreased synthetic lethal interactions with G13D
 g13d_survival_plot <- model_data1 %>%
@@ -211,9 +218,12 @@ g13d_survival_plot <- model_data1 %>%
     labs(y = "depletion", color = "RAS allele",
          title = "Target genes that cause G13D-specific reduced depletion",
          subtitle = "KRAS G13D was a significant predictor for whether the targeting of the indicated gene had reduced depletion of the cell line.")
-ggsave(filename = "images/linear_model/model1_G13dSurvival.png",
-       plot = g13d_survival_plot,
-       width = 10, height = 8, units = "in", dpi = 300)
+ggsave(
+    filename = file.path(
+        "images", "linear_model", "model1_G13dSurvival.png"
+    ), plot = g13d_survival_plot,
+    width = 10, height = 8, units = "in", dpi = 300
+)
 
 
 #### ---- (2) gene_effect ~ G12 + G13D + mut_target ---- ####
@@ -276,7 +286,7 @@ model_data3 <- ccle_gene_expr %>%
     filter(!all(gene_expression == 0)) %>%
     mutate(gene_expression_norm = scale(gene_expression)) %>%
     ungroup()
-saveRDS(model_data3, "model_results/linear_model_3_data.rds")
+saveRDS(model_data3, file.path("model_results", "linear_model_3_data.rds"))
 
 
 # run linear model on each gene
@@ -294,7 +304,7 @@ models3_open <- unnest_model_results(models3) %>%
             term == "target_is_mutatedTRUE", "target_is_mutated", term
         )
     )
-saveRDS(models3_open, "model_results/linear_model_3.rds")
+saveRDS(models3_open, file.path("model_results", "linear_model_3.rds"))
 
 # VISUALIZATION
 
@@ -315,9 +325,12 @@ model3_G13dVolcano_plot <- models3_open %>%
     labs(x = "KRAS G13D effect", y = "-log( p-value )", color = "effect",
          title = "Effect of KRAS G13D on the depletion effect of genetic KO",
          subtitle = "Highlighted genes had a significant model, KRAS G13D fit, and an estimate with magnitude greater than 0.2")
-ggsave(filename = "images/linear_model/model3_G13dVolcano_plot.png",
-       plot = model3_G13dVolcano_plot,
-       width = 8, height = 6, units = "in", dpi = 300)
+ggsave(
+    filename = file.path(
+        "images", "linear_model", "model3_G13dVolcano_plot.png"
+    ), plot = model3_G13dVolcano_plot,
+    width = 8, height = 6, units = "in", dpi = 300
+)
 
 # G12 vs G13D volcano plot
 model3_DiffEstimateVolcano_plot <- models3_open %>%
@@ -341,9 +354,12 @@ model3_DiffEstimateVolcano_plot <- models3_open %>%
          color = "largest effect",
          title = "Difference in effect size of KRAS G12 KRAS G13D",
          subtitle = "Highlighted genes had statistically significant models and a difference in estimate with magnitude of at least 0.2")
-ggsave(filename = "images/linear_model/model3_DiffEstimateVolcano_plot.png",
-       plot = model3_DiffEstimateVolcano_plot,
-       width = 8, height = 6, units = "in", dpi = 300)
+ggsave(
+    filename = file.path(
+        "images", "linear_model", "model3_DiffEstimateVolcano_plot.png"
+    ), plot = model3_DiffEstimateVolcano_plot,
+    width = 8, height = 6, units = "in", dpi = 300
+)
 
 
 model3_G12VsG13dScatter_plot <- models3_open %>%
@@ -364,9 +380,12 @@ model3_G12VsG13dScatter_plot <- models3_open %>%
                                    xlim = c(-0.4, 0.4),
                                    ylim = c(-0.5, 0.5)) +
     labs(x = "KRAS G12 effect", y = "KRAS G13D effect")
-ggsave(filename = "images/linear_model/model3_G12VsG13dScatter_plot.png",
-       plot = model3_G12VsG13dScatter_plot,
-       width = 6, height = 7, units = "in", dpi = 300)
+ggsave(
+    filename = file.path(
+        "images", "linear_model", "model3_G12VsG13dScatter_plot.png"
+    ), plot = model3_G12VsG13dScatter_plot,
+    width = 6, height = 7, units = "in", dpi = 300
+)
 
 # increased synthetic lethal interactions with G13D
 model3_G13dDepletion_plot <- models3_open %>%
@@ -382,9 +401,12 @@ model3_G13dDepletion_plot <- models3_open %>%
     labs(y = "depletion", color = "RAS allele",
          title = "Target genes that cause G13D-specific increased depletion",
          subtitle = "KRAS G13D was a significant predictor for whether the targeting of the indicated gene caused depletion of the cell line.")
-ggsave(filename = "images/linear_model/model3_G13dDepletion_plot.png",
-       plot = model3_G13dDepletion_plot,
-       width = 10, height = 8, units = "in", dpi = 300)
+ggsave(
+    filename = file.path(
+        "images", "linear_model", "model3_G13dDepletion_plot.png"
+    ), plot = model3_G13dDepletion_plot,
+    width = 10, height = 8, units = "in", dpi = 300
+)
 
 # decreased synthetic lethal interactions with G13D
 model3_G13dSurvival_plot <- models3_open %>%
@@ -400,9 +422,12 @@ model3_G13dSurvival_plot <- models3_open %>%
     labs(y = "depletion", color = "RAS allele",
          title = "Target genes that cause G13D-specific reduced depletion",
          subtitle = "KRAS G13D was a significant predictor for whether the targeting of the indicated gene had reduced depletion of the cell line.")
-ggsave(filename = "images/linear_model/model3_G13dSurvival_plot.png",
-       plot = model3_G13dSurvival_plot,
-       width = 10, height = 8, units = "in", dpi = 300)
+ggsave(
+    filename = file.path(
+        "images", "linear_model", "model3_G13dSurvival_plot.png"
+    ), plot = model3_G13dSurvival_plot,
+    width = 10, height = 8, units = "in", dpi = 300
+)
 
 # effects of gene expression
 expression_sigs <- models3_open %>%
@@ -434,9 +459,12 @@ expresseion_effect_3 <- models3_open %>%
     labs(x = "gene expression (scaled)", y = "depletion effect",
          title = "Gene expression levels that trend with depletion effect",
          color = "RAS allele")
-ggsave(filename = "images/linear_model/expresseion_effect_3.png",
-       plot = expresseion_effect_3,
-       width = 10, height = 6, units = "in", dpi = 300)
+ggsave(
+    filename = file.path(
+        "images", "linear_model", "expresseion_effect_3.png"
+    ), plot = expresseion_effect_3,
+    width = 10, height = 6, units = "in", dpi = 300
+)
 
 
 # effects of mutated target gene
@@ -470,9 +498,12 @@ mutation_effect_3 <- models3_open %>%
     ) +
     labs(y = "depletion effect",
          title = "Mutational status of the target and depletion effect")
-ggsave(filename = file.path("images", "linear_model", "mutation_effect_3.png"),
-       plot = mutation_effect_3,
-       width = 10, height = 7, units = "in", dpi = 300)
+ggsave(
+    filename = file.path(
+        "images", "linear_model", "mutation_effect_3.png"
+    ), plot = mutation_effect_3,
+    width = 10, height = 7, units = "in", dpi = 300
+)
 
 #### ---- (4) gene_effect ~ WT + G12 + G13D + mut(cond) + gene_expr ---- ####
 # same as (3) but only include mutational status if mutated at least 4 times
@@ -543,7 +574,8 @@ ggsave(
     filename = file.path(
         "images", "linear_model", "model4_DiffEstimateVolcano_plot.png"
     ),plot = model4_DiffEstimateVolcano_plot,
-    width = 8, height = 6, units = "in", dpi = 300)
+    width = 8, height = 6, units = "in", dpi = 300
+)
 
 
 model4_G12VsG13dScatter_plot <- models4_open %>%
@@ -564,9 +596,12 @@ model4_G12VsG13dScatter_plot <- models4_open %>%
                                    xlim = c(-0.4, 0.4),
                                    ylim = c(-0.4, 0.4)) +
     labs(x = "KRAS G12 effect", y = "KRAS G13D effect")
-ggsave(filename = "images/linear_model/model4_G12VsG13dScatter_plot.png",
-       plot = model4_G12VsG13dScatter_plot,
-       width = 7, height = 7, units = "in", dpi = 300)
+ggsave(
+    filename = file.path(
+        "images", "linear_model", "model4_G12VsG13dScatter_plot.png"
+    ), plot = model4_G12VsG13dScatter_plot,
+    width = 7, height = 7, units = "in", dpi = 300
+)
 
 # increased synthetic lethal interactions with G13D
 model4_G13dDepletion_plot <- models4_open %>%
@@ -582,9 +617,12 @@ model4_G13dDepletion_plot <- models4_open %>%
     labs(y = "depletion", color = "RAS allele",
          title = "Target genes that cause G13D-specific increased depletion",
          subtitle = "KRAS G13D was a significant predictor for whether the targeting of the indicated gene caused depletion of the cell line.")
-ggsave(filename = "images/linear_model/model4_G13dDepletion_plot.png",
-       plot = model4_G13dDepletion_plot,
-       width = 10, height = 8, units = "in", dpi = 300)
+ggsave(
+    filename = file.path(
+        "images", "linear_model", "model4_G13dDepletion_plot.png"
+    ), plot = model4_G13dDepletion_plot,
+    width = 10, height = 8, units = "in", dpi = 300
+)
 
 # decreased synthetic lethal interactions with G13D
 model4_G13dSurvival_plot <- models4_open %>%
@@ -600,9 +638,12 @@ model4_G13dSurvival_plot <- models4_open %>%
     labs(y = "depletion", color = "RAS allele",
          title = "Target genes that cause G13D-specific reduced depletion",
          subtitle = "KRAS G13D was a significant predictor for whether the targeting of the indicated gene had reduced depletion of the cell line.")
-ggsave(filename = "images/linear_model/model4_G13dSurvival_plot.png",
-       plot = model4_G13dSurvival_plot,
-       width = 10, height = 8, units = "in", dpi = 300)
+ggsave(
+    filename = file.path(
+        "images", "linear_model", "model4_G13dSurvival_plot.png"
+    ), plot = model4_G13dSurvival_plot,
+    width = 10, height = 8, units = "in", dpi = 300
+)
 
 
 #### ---- (5) gene_effect ~ WT + G12D + G13D + mut(cond) + gene_expr ---- ####
@@ -623,7 +664,7 @@ model_data5 <- ccle_gene_expr %>%
     filter(!all(gene_expression == 0)) %>%
     mutate(gene_expression_norm = scale(gene_expression)) %>%
     ungroup()
-saveRDS(model_data5, "model_results/linear_model_5_data.rds")
+saveRDS(model_data5, file.path("model_results", "linear_model_5_data.rds"))
 
 models5 <- model_data5 %>%
     group_by(gene) %>%
@@ -639,7 +680,7 @@ models5_open <- unnest_model_results(models5) %>%
             term == "target_is_mutatedTRUE", "target_is_mutated", term
         )
     )
-saveRDS(models5_open, "model_results/linear_model_5.rds")
+saveRDS(models5_open, file.path("model_results", "linear_model_5.rds"))
 
 
 # VISUALIZATION
@@ -665,9 +706,11 @@ model5_DiffEstimateVolcanoTiled_plot <- ggplot_G12DvG13Dvolcano_tiled_wrapper(
     volcano_plot5_data
 )
 ggsave(
-    filename = "images/linear_model/model5_DiffEstimateVolcanoTiled_plot.png",
-    plot = model5_DiffEstimateVolcanoTiled_plot,
-    width = 10, height = 6, units = "in", dpi = 300)
+    filename = file.path(
+        "images", "linear_model", "model5_DiffEstimateVolcanoTiled_plot.png"
+    ), plot = model5_DiffEstimateVolcanoTiled_plot,
+    width = 10, height = 6, units = "in", dpi = 300
+)
 
 
 model5_G12VsG13dScatter_plot <- models5_open %>%
@@ -688,9 +731,11 @@ model5_G12VsG13dScatter_plot <- models5_open %>%
                                    xlim = c(-0.5, 0.5),
                                    ylim = c(-0.5, 0.5)) +
     labs(x = "KRAS G12D effect", y = "KRAS G13D effect")
-ggsave(filename = "images/linear_model/model5_G12VsG13dScatter_plot.png",
-       plot = model5_G12VsG13dScatter_plot,
-       width = 7, height = 7, units = "in", dpi = 300)
+ggsave(
+    filename = file.path(
+        "images", "linear_model", "model5_G12VsG13dScatter_plot.png"
+    ), plot = model5_G12VsG13dScatter_plot,
+    width = 7, height = 7, units = "in", dpi = 300)
 
 # increased synthetic lethal interactions with G13D
 model5_G13dDepletion_plot <- models5_open %>%
@@ -706,9 +751,11 @@ model5_G13dDepletion_plot <- models5_open %>%
     labs(y = "depletion", color = "RAS allele",
          title = "Target genes that cause G13D-specific depletion",
          subtitle = "KRAS G13D was a significant predictor for whether the targeting of the indicated gene caused depletion of the cell line.")
-ggsave(filename = "images/linear_model/model5_G13dDepletion_plot.png",
-       plot = model5_G13dDepletion_plot,
-       width = 10, height = 8, units = "in", dpi = 300)
+ggsave(
+    filename = file.path(
+        "images", "linear_model", "model5_G13dDepletion_plot.png"
+    ), plot = model5_G13dDepletion_plot,
+    width = 10, height = 8, units = "in", dpi = 300)
 
 # decreased synthetic lethal interactions with G13D
 model5_G13dSurvival_plot <- models5_open %>%
@@ -724,9 +771,11 @@ model5_G13dSurvival_plot <- models5_open %>%
     labs(y = "depletion", color = "RAS allele",
          title = "Target genes that cause G13D-specific depletion",
          subtitle = "KRAS G13D was a significant predictor for whether the targeting of the indicated gene had reduced depletion of the cell line.")
-ggsave(filename = "images/linear_model/model5_G13dSurvival_plot.png",
-       plot = model5_G13dSurvival_plot,
-       width = 10, height = 8, units = "in", dpi = 300)
+ggsave(
+    filename = file.path(
+        "images", "linear_model", "model5_G13dSurvival_plot.png"
+    ), plot = model5_G13dSurvival_plot,
+    width = 10, height = 8, units = "in", dpi = 300)
 
 
 #### ---- (6) gene_effect ~ WT + G12 + G13D ---- ####
@@ -756,7 +805,7 @@ models6_open <- unnest_model_results(models6) %>%
             term == "target_is_mutatedTRUE", "target_is_mutated", term
         )
     )
-saveRDS(models6_open, "model_results/linear_model_6.rds")
+saveRDS(models6_open, file.path("model_results", "linear_model_6.rds"))
 
 
 # VISUALIZATION
@@ -783,9 +832,11 @@ model6_DiffEstimateVolcano_plot <- models6_open %>%
          color = "largest effect",
          title = "Difference in effect size of KRAS G12 vs. KRAS G13D",
          subtitle = "Highlighted genes had statistically significant models and a difference in estimate with magnitude of at least 0.2")
-ggsave(filename = "images/linear_model/model6_DiffEstimateVolcano_plot.png",
-       plot = model6_DiffEstimateVolcano_plot,
-       width = 8, height = 6, units = "in", dpi = 300)
+ggsave(
+    filename = file.path(
+        "images", "linear_model", "model6_DiffEstimateVolcano_plot.png"
+    ), plot = model6_DiffEstimateVolcano_plot,
+    width = 8, height = 6, units = "in", dpi = 300)
 
 
 model6_G12VsG13dScatter_plot <- models6_open %>%
@@ -806,9 +857,11 @@ model6_G12VsG13dScatter_plot <- models6_open %>%
                                    xlim = c(-0.5, 0.5),
                                    ylim = c(-0.5, 0.5)) +
     labs(x = "KRAS G12D effect", y = "KRAS G13D effect")
-ggsave(filename = "images/linear_model/model6_G12VsG13dScatter_plot.png",
-       plot = model6_G12VsG13dScatter_plot,
-       width = 7, height = 7, units = "in", dpi = 300)
+ggsave(
+    filename = file.path(
+        "images", "linear_model", "model6_G12VsG13dScatter_plot.png"
+    ), plot = model6_G12VsG13dScatter_plot,
+    width = 7, height = 7, units = "in", dpi = 300)
 
 # increased synthetic lethal interactions with G13D
 model6_G13dDepletion_plot <- models6_open %>%
@@ -824,9 +877,11 @@ model6_G13dDepletion_plot <- models6_open %>%
     labs(y = "depletion", color = "RAS allele",
          title = "Target genes that cause G13D-specific depletion",
          subtitle = "KRAS G13D was a significant predictor for whether the targeting of the indicated gene caused depletion of the cell line.")
-ggsave(filename = "images/linear_model/model6_G13dDepletion_plot.png",
-       plot = model6_G13dDepletion_plot,
-       width = 10, height = 5, units = "in", dpi = 300)
+ggsave(
+    filename = file.path(
+        "images", "linear_model", "model6_G13dDepletion_plot.png"
+    ), plot = model6_G13dDepletion_plot,
+    width = 10, height = 5, units = "in", dpi = 300)
 
 # decreased synthetic lethal interactions with G13D
 model6_G13dSurvival_plot <- models6_open %>%
@@ -842,16 +897,18 @@ model6_G13dSurvival_plot <- models6_open %>%
     labs(y = "depletion", color = "RAS allele",
          title = "Target genes that cause G13D-specific depletion",
          subtitle = "KRAS G13D was a significant predictor for whether the targeting of the indicated gene had reduced depletion of the cell line.")
-ggsave(filename = "images/linear_model/model6_G13dSurvival_plot.png",
-       plot = model6_G13dSurvival_plot,
-       width = 10, height = 5, units = "in", dpi = 300)
+ggsave(
+    filename = file.path(
+        "images", "linear_model", "model6_G13dSurvival_plot.png"
+    ), plot = model6_G13dSurvival_plot,
+    width = 10, height = 5, units = "in", dpi = 300)
 
 
 #### ---- Specific Follow-up ---- ####
 
 # cancer data copied from my co-mutation project data
 cancer_data <- readRDS(file.path(
-    "data/ras_annotated_cancer_data_nohypermuts.rds"
+    "data", "ras_annotated_cancer_data_nohypermuts.rds"
 ))
 
 model4_g13d_dn <- models4_open %>%
@@ -919,9 +976,12 @@ comut_heatmap <- gene_comuts %>%
     ) +
     labs(fill = "co-mut.\nfreq.",
          title = "Co-mutation frequency of the genes and KRAS alleles")
-ggsave(filename = "images/linear_model/comut_heatmap.png",
-       plot = comut_heatmap,
-       width = 11, height = 4, units = "in", dpi = 300)
+ggsave(
+    filename = file.path(
+        "images", "linear_model", "comut_heatmap.png"
+    ), plot = comut_heatmap,
+    width = 11, height = 4, units = "in", dpi = 300
+)
 
 # heatmap of co-mutation (color scaled within each gene)
 comut_heatmap_rescaled <- gene_comuts %>%
@@ -946,9 +1006,12 @@ comut_heatmap_rescaled <- gene_comuts %>%
     ) +
     labs(fill = "co-mut.\nfreq.",
          title = "Co-mutation frequency of the genes and KRAS alleles")
-ggsave(filename = "images/linear_model/comut_heatmap_rescaled.png",
-       plot = comut_heatmap_rescaled,
-       width = 11, height = 4, units = "in", dpi = 300)
+ggsave(
+    filename = file.path(
+        "images", "linear_model", "comut_heatmap_rescaled.png"
+    ), plot = comut_heatmap_rescaled,
+    width = 11, height = 4, units = "in", dpi = 300
+)
 
 
 # pheatmaps with hierarchical clustering
