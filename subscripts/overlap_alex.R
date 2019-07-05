@@ -49,7 +49,10 @@ model_data_3 <- readRDS(file.path("model_results", "linear_model_3_data.rds"))
 #### ---- Comparing results ---- ####
 
 alex_results_sig <- alex_results %>%
-    filter(adj_p_val < 0.05 & abs(log_fc) > 2.0) %>%
+    filter(
+        (mice == "mouse_g13d" & adj_p_val < 0.1 & abs(log_fc) > 1.5) |
+        (mice == "mouse_g12d_vs_g13d" & adj_p_val < 0.05 & abs(log_fc) > 1.2)
+    ) %>%
     jhcutils::u_pull(gene) %>%
     str_to_upper()
 
@@ -114,7 +117,7 @@ dep_ppi <- hint_ppi %N>%
             order = 1,
             .f = is_bridging_node,
             lgl_filter = expr(is_deg),
-            num_neighbors = 3, ignore_nodes = c()
+            num_neighbors = 2, ignore_nodes = c()
         ), is_bridge_dep = map_local_lgl(
             order = 1,
             .f = is_bridging_node,

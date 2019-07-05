@@ -47,10 +47,12 @@ ccle_muts_select <- ccle_muts %>%
     add_column(target_is_mutated = TRUE)
 
 # samples with NRAS, BRAF, CRAF, ARAF, or MAPK mutations
-mapk_regex <- "NRAS|ARAF|BRAF|CRAF"
 mapk_muts <- ccle_muts %>%
     filter(variant_classification %in% !!muts_to_include) %>%
-    filter(str_detect(hugo_symbol, mapk_regex)) %>%
+    filter(
+        (hugo_symbol == "NRAS" & str_detect(protein_change, "G12|G13|Q61")) |
+        (hugo_symbol == "BRAF" & str_detect(protein_change, "V600"))
+    ) %>%
     pull(dep_map_id) %>%
     unique()
 
@@ -90,7 +92,8 @@ model_data <- dep_map %>%
         ), codon = ifelse(
             is.na(codon), "WT", codon
         )
-    )
+    ) %>%
+    filter(codon %in% c("12", "13", "WT"))
 
 saveRDS(model_data, file.path("model_results", "model_data.rds"))
 
@@ -1139,7 +1142,7 @@ final_list_of_hits <- c(
     "ERMARD",
     "NPHP1",
     "NUP88",
-    "PROSER1",
+    "SCAF1",
     "SCARA3",
     "UBE2S",
     "ZBTB17"

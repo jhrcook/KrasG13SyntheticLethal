@@ -49,11 +49,13 @@ ccle_muts_select <- ccle_muts %>%
     unique() %>%
     add_column(target_is_mutated = TRUE)
 
-# samples with NRAS, BRAF, CRAF, ARAF, or MAPK mutations
-mapk_regex <- "NRAS|ARAF|BRAF|CRAF"
+# samples with NRAS or BRAF activating mutations
 mapk_muts <- ccle_muts %>%
     filter(variant_classification %in% !!muts_to_include) %>%
-    filter(str_detect(hugo_symbol, mapk_regex)) %>%
+    filter(
+        (hugo_symbol == "NRAS" & str_detect(protein_change, "G12|G13|Q61")) |
+        (hugo_symbol == "BRAF" & str_detect(protein_change, "V600"))
+    ) %>%
     pull(dep_map_id) %>%
     unique()
 
@@ -81,7 +83,8 @@ model_data <- dep_map %>%
         ), codon = ifelse(
             is.na(codon), "WT", codon
         )
-    )
+    ) %>%
+    filter(codon %in% c("12", "13", "WT"))
 
 lasso_data <- model_data %>%
     select(dep_map_id, ras_allele, gene, gene_effect) %>%

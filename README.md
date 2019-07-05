@@ -112,8 +112,8 @@ They are not normally distributed. Instead, most of the values lie near 0, indic
 
 For all of the following analyses, these two conditions were met:
 
-1. Only genes that caused a depletion score of -0.25 or lower in at least one cell line were used. This decreased the number of genes used from 17634 to 13993.
-2. Cell lines were not used if they had multiple *KRAS* mutations or a mutation in *NRAS* or *A/B/CRAF*.
+1. Only genes that caused a depletion score of -0.25 or lower in at least one cell line were used. This decreased the number of genes used from 17634 to 14314.
+2. Cell lines were not used if they had multiple *KRAS* mutations or an activating mutation in *NRAS* or *BRAF*.
 
 
 ## *KRAS* G13D vs *KRAS* G12 vs. WT {.tabset}
@@ -335,13 +335,13 @@ The relatively close proximity of the genes identified to have genetic interacti
 
 ### Overlap with Alex (UCSF)
 
-I compared the genes identified in this analysis to those identified by Alex from UCSF. There was no overlap between the genes identified by differential gene expression (DGE; q-value < 0.05, log-fold change > 2) and modeling G13D-specific dependencies (model q-value < 0.2, coefficient p-value < 0.05, coefficient of magnitude > 0.15).
+I compared the genes identified in this analysis to those identified by Alex from UCSF. There was no overlap between the genes identified by differential gene expression (DGE between *KRAS* G12D vs. G13D and *KRAS* G13D vs. WT using Alex's cutoffs on FDR and log-fold change) and modeling G13D-specific dependencies (model q-value < 0.2, coefficient p-value < 0.05, coefficient of magnitude > 0.15).
 
 The following figure is the volcano plot of the G13D coefficient against its p-value. The blue points are genes significantly differentially expressed in *any* of the mouse model DGE comparisons. The top selection of those are labeled.
 
 ![](images/overlap_alex/comparison_volcano.png)
 
-I conducted a similar extraction of the PPI subnetwork for the differentially expressed genes (DEG). The yellow nodes are DEG and the gray nodes are bridge nodes between them (edges connecting bridge nodes have been removed for visualization purposes).
+I conducted a similar extraction of the PPI subnetwork for the differentially expressed genes (DEG). The yellow nodes are DEG and the gray nodes are bridge nodes between them (bridge nodes are nodes connected to at least 2 DEG; edges connecting bridge nodes have been removed for visualization purposes).
 
 ![](images/overlap_alex/dep_dge_ppi_plot.png)
 
@@ -382,7 +382,7 @@ Below are the genes I would recommend further pursuing as *KRAS* G13D-specific s
 | **ERMARD**  | No              | specific         | specific      |
 | **NPHP1**   | Yes             | specific         | high variance |
 | **NUP88**   | Yes             | very strong      | specific      |
-| **PROSER1** | Yes             | small difference | high variance |
+| **SCAF1**   | Yes             | specific         | specific      |
 | **SCARA3**  | Yes             | specific         | specific      |
 | **UBE2S**   | Yes             | small difference | specific      |
 | **ZBTB17**  | Yes             | small difference | specific      |
@@ -394,7 +394,6 @@ Below are the genes I would recommend further pursuing as *KRAS* G13D-specific s
 
 [![](https://img.shields.io/badge/Uniprot-ART1-4E9BBA.svg?style=flat&logo=microgenetics)](https://www.uniprot.org/uniprot/P52961)
 [![](https://img.shields.io/badge/STRING-ART1-B8B77B.svg?style=flat&logo=graphql)](https://string-db.org/network/9606.ENSP00000250693)
-
 
 Full name: **GPI-linked NAD(P)(+)--arginine ADP-ribosyltransferase 1**
 
@@ -409,7 +408,6 @@ Located on the cell membrane and the sarcoplasmic reticulum membrane (in myocyte
 [![](https://img.shields.io/badge/Uniprot-BET1L-4E9BBA.svg?style=flat&logo=microgenetics)](https://www.uniprot.org/uniprot/Q9NYM9)
 [![](https://img.shields.io/badge/STRING-BET1L-B8B77B.svg?style=flat&logo=graphql)](https://string-db.org/cgi/network.pl?taskId=Vh3EGnP83jPw)
 
-
 Full name: **BET1-like protein**
 
 "Vesicle SNARE required for targeting and fusion of retrograde transport vesicles with the Golgi complex. Required for the integrity of the Golgi complex (By similarity)."
@@ -419,7 +417,6 @@ Full name: **BET1-like protein**
 
 [![](https://img.shields.io/badge/Uniprot-ERMARD-4E9BBA.svg?style=flat&logo=microgenetics)](https://www.uniprot.org/uniprot/Q5T6L9)
 [![](https://img.shields.io/badge/STRING-ERMARD-B8B77B.svg?style=flat&logo=graphql)](https://string-db.org/cgi/network.pl?taskId=dJ1fiJDsN4He)
-
 
 Full name: **Endoplasmic reticulum membrane-associated RNA degradation protein**
 
@@ -431,7 +428,6 @@ Localized to the ER.
 
 [![](https://img.shields.io/badge/Uniprot-NPHP1-4E9BBA.svg?style=flat&logo=microgenetics)](https://www.uniprot.org/uniprot/O15259)
 [![](https://img.shields.io/badge/STRING-NPHP1-B8B77B.svg?style=flat&logo=graphql)](https://string-db.org/cgi/network.pl?taskId=66Kx9qDato2C)
-
 
 Full name: **Nephrocystin-1**
 
@@ -447,19 +443,21 @@ Full name: **Nuclear pore complex protein Nup88**
 
 "Essential component of nuclear pore complex."
 
-#### PROSER1
+#### SCAF1
 
-[![](https://img.shields.io/badge/Uniprot-PROSER1-4E9BBA.svg?style=flat&logo=microgenetics)](https://www.uniprot.org/uniprot/Q86XN7)
-[![](https://img.shields.io/badge/STRING-PROSER1-B8B77B.svg?style=flat&logo=graphql)](https://string-db.org/cgi/network.pl?taskId=kEiWHIQsrL53)
+[![](https://img.shields.io/badge/Uniprot-SCAF1-4E9BBA.svg?style=flat&logo=microgenetics)](https://www.uniprot.org/uniprot/Q9H7N4)
+[![](https://img.shields.io/badge/STRING-SCAF1-B8B77B.svg?style=flat&logo=graphql)](https://string-db.org/cgi/network.pl?taskId=og3ozcn6iz3X)
 
+Full name: **Splicing factor, arginine/serine-rich 19**
 
-Full name: **Proline and serine-rich protein 1**
+"May function in pre-mRNA splicing."
+
+Interacts with [POLR2A](https://www.uniprot.org/uniprot/P24928), the catalytic component of RNA polymerase II.
 
 #### SCARA3
 
 [![](https://img.shields.io/badge/Uniprot-SCARA3-4E9BBA.svg?style=flat&logo=microgenetics)](https://www.uniprot.org/uniprot/Q6AZY7)
 [![](https://img.shields.io/badge/STRING-SCARA3-B8B77B.svg?style=flat&logo=graphql)](https://string-db.org/cgi/network.pl?taskId=n6o0v3kgRZld)
-
 
 Full name: **Scavenger receptor class A member 3**
 
@@ -467,11 +465,11 @@ Full name: **Scavenger receptor class A member 3**
 
 Present in the membranes of the ER and Golgi Apparatus
 
+
 #### UBE2S
 
 [![](https://img.shields.io/badge/Uniprot-UBE2S-4E9BBA.svg?style=flat&logo=microgenetics)](https://www.uniprot.org/uniprot/Q16763)
 [![](https://img.shields.io/badge/STRING-UBE2S-B8B77B.svg?style=flat&logo=graphql)](https://string-db.org/cgi/network.pl?taskId=GNEZ6mG1Fcgi)
-
 
 Full name: **Ubiquitin-conjugating enzyme E2 S**
 

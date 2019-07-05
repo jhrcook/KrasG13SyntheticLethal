@@ -1,0 +1,7 @@
+LASSO: (1) WT vs Mutant RAS
+
+lambda min: 0.01902044 
+lambda 1se: 0.1280865 
+
+lambda.min model accuracy: 0.9090909 
+lambda.1se model accuracy: 0.9090909 

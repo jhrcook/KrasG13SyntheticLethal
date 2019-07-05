@@ -30,7 +30,7 @@ final_list_of_hits <- c(
     "ERMARD",
     "NPHP1",
     "NUP88",
-    "PROSER1",
+    "SCAF1",
     "SCARA3",
     "UBE2S",
     "ZBTB17"
