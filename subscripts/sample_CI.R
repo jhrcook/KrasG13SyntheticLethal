@@ -110,6 +110,8 @@ model_data <- readRDS(file.path("model_results", "linear_model_3_data.rds")) %>%
     filter(gene != "KRAS") %>%
     mutate(parsed_boot = map(bs_results, parse_bootstrap_results))
 
+saveRDS(model_data, file.path("model_results", "linear_model_4_CI.rds"))
+
 # plot the coefficients for G12 and G13D with 95% CI
 coef_95CI <- model_data %>%
     unnest(parsed_boot) %>%
