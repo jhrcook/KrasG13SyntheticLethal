@@ -2,6 +2,7 @@
 # Standard linear model of gene effect
 
 library(gridExtra)
+library(magrittr)
 library(tidyverse)
 
 source(file.path("subscripts", "global_constants.R"))
@@ -942,7 +943,8 @@ gene_comuts <- cancer_data %>%
     group_by(ras_allele_grp) %>%
     mutate(ras_allele_grp_n = n_distinct(sampleid)) %>%
     ungroup() %>%
-    filter(gene %in% c(model4_g13d_dn, model4_g13d_up)) %>%
+    filter(gene %in% c(model4_g13d_dn, model4_g13d_up)) %T>%
+    saveRDS(file.path("model_results", "linear_model_4_comutants.rds")) %>%
     group_by(gene, ras_allele_grp, ras_allele_grp_n) %>%
     summarise(co_mut_n = n_distinct(sampleid)) %>%
     ungroup() %>%
