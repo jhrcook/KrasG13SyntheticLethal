@@ -497,7 +497,7 @@ Interactions with MYC, SMAD 2/3/4, and DNMT3A (among others).
 
 ![](images/final_figure/figure.png)
 
-**A. Linear model of depletion effect by *KRAS* allele**. This was the equation used to find the association between depletion effect of knocking out the target ($depletion_t$) and the *KRAS* allele ($KRAS allele$$, whether the target gene is mutated ($mutated_t$) and the expression of the target gene ($expression_t$). The covariate of whether the target gene is mutated or not was only included if the gene was mutated in at least 4 cell lines to prevent spurious associations based on over-fitting based on a few data points.
+**A. Linear model of depletion effect by *KRAS* allele**. This was the equation used to find the association between depletion effect of knocking out the target ($depletion_t$) and the *KRAS* allele ($KRAS allele$, whether the target gene is mutated ($mutated_t$) and the expression of the target gene ($expression_t$). The covariate of whether the target gene is mutated or not was only included if the gene was mutated in at least 4 cell lines to prevent spurious associations based on over-fitting based on a few data points.
 
 **B. Comparing the associations with *KRAS* alleles.** The parameters fit to the *KRAS* G12 (x-axis) and *KRAS* G13D (y-axis) for each gene (point) were compared. Those colored in purple were used for further validation and testing. Those highlight in red and blue are **TODO**. (NEED TO EXPLAIN DIRECTIONALITY.)
 
