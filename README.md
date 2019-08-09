@@ -105,7 +105,6 @@ They are not normally distributed. Instead, most of the values lie near 0, indic
 ![](images/data_prep/depmap_dist_plot.png)
 
 
-
 # Linear Models {#LinearModels}
 
 (Analysis conducted in `subscripts/linear_model.R`.)
@@ -489,6 +488,19 @@ Full name: **Zinc finger and BTB domain-containing protein 17**
 
 Interactions with MYC, SMAD 2/3/4, and DNMT3A (among others).
 
+## Figure
+
+![](images/final_figure/figure.png)
+
+**A. Linear model of depletion effect by *KRAS* allele**. This was the equation used to find the association between depletion effect of knocking out the target ($depletion_t$) and the *KRAS* allele ($KRAS allele$, whether the target gene is mutated ($mutated_t$) and the expression of the target gene ($expression_t$). The covariate of whether the target gene is mutated or not was only included if the gene was mutated in at least 4 cell lines to prevent spurious associations based on over-fitting based on a few data points.
+
+**B. Comparing the associations with *KRAS* alleles.** The parameters fit to the *KRAS* G12 (x-axis) and *KRAS* G13D (y-axis) for each gene (point) were compared. Those colored in purple were used for further validation and testing. Those highlight in red and blue are **TODO**. (NEED TO EXPLAIN DIRECTIONALITY.)
+
+**C. The depletion effects by *KRAS* allele.** The effect of knocking out the target gene indicated above each box-plot on each cell line (point) with either a *KRAS* G12 mutation, *KRAS* G13D mutation, or WT *KRAS*. A more negative score indicates a stronger lethal effect. The scores are scaled such that a score of 0 indicates that the gene was non-essential while a score of 1 indicates the gene was essential.
+
+**D. Frequency of co-mutation events in human cancer samples.** The number of times the indicated gene (y-axis) was mutated in samples with *KRAS* G12, *KRAS* G13D, or WT *KRAS* is indicated by the color and number within each cell.
+
+---
 
 
 # Predicting *KRAS* mutation using depletion effects {#PredictingKRASmutationusingdepletioneffects .tabset}
@@ -528,4 +540,3 @@ Using machine learning algorithms requires the split of the data into testing an
 
 Still, the LASSO-regularized linear regression on *KRAS* mutational status was interesting and may have identified a few avenues of further exploration.
 
----
