@@ -1,7 +1,7 @@
 LASSO: (4) WT vs Mutant RAS without KRAS predictor
 
-lambda min: 0.0161329 
-lambda 1se: 0.06822995 
+lambda min: 0.03005025 
+lambda 1se: 0.07272545 
 
-lambda.min model accuracy: 0.7272727 
-lambda.min model accuracy: 0.7272727 
+lambda.min model accuracy: 0.5714286 
+lambda.min model accuracy: 0.6666667 

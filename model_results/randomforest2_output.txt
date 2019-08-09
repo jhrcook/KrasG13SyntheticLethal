@@ -6,17 +6,17 @@ Call:
  randomForest(formula = ras_allele ~ ., data = train_data, importance = TRUE)  
                Type of random forest: classification 
                      Number of trees: 500 
-No. of variables tried at each split: 7 
+No. of variables tried at each split: 6 
  
-        OOB estimate of  error rate: 8.79% 
+        OOB estimate of  error rate: 8.14% 
 Confusion matrix: 
    WT  M class.error 
-WT 39  5  0.11363636 
-M   3 44  0.06382979 
+WT 42  2  0.04545455 
+M   5 37  0.11904762 
 -----
 
 -----
 Importance:
 -----
 
-random forest accuracy: 1 
+random forest accuracy: 0.9047619 
