@@ -20,20 +20,9 @@ model_data <- readRDS(file.path("model_results", "model_data.rds"))
 
 #### ---- Prepare model results ---- ####
 
-# model: (4) gene_effect ~ WT + G12 + G13D + mut(cond) + gene_expr
-genetic_dep_path <- file.path("model_results", "linear_model_4.rds")
-genetic_dep <- readRDS(genetic_dep_path)
-
 final_list_of_hits <- c(
-    "ART1",
-    "BET1L",
-    "ERMARD",
-    "NPHP1",
-    "NUP88",
-    "SCAF1",
-    "SCARA3",
-    "UBE2S",
-    "ZBTB17"
+    unlist(readLines(file.path("model_results", "linear_model_results_krasup.txt"))),
+    unlist(readLines(file.path("model_results", "linear_model_results_krasdn.txt")))
 )
 
 # get information on the cell lines
@@ -45,7 +34,9 @@ cell_line_tib <- dep_map %>%
     arrange(dep_map_id)
 
 # add cell line info to `model_data` and reorganize columns
-model_data <- left_join(model_data, cell_line_tib, by = "dep_map_id") %>%
+model_data <- model_data %>%
+    filter(gene %in% !!final_list_of_hits)  %>%
+    left_join(cell_line_tib, by = "dep_map_id") %>%
     select(
         dep_map_id, cell_line_name, ccle_name, disease,
         ras_allele, codon,
