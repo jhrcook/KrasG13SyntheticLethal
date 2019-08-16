@@ -27,6 +27,13 @@ library(tidyverse)
 set.seed(0)
 ```
 
+<style>
+div.red { background-color:#ffe6e6; border-radius: 5px; padding: 20px}
+</style>
+<div class = "red">
+Note: A second analysis, available [here](Second_analysis_outline.html), was conducted with only COAD cell lines. This is more up-to-date and is currently being pursued *in vitro*.
+</div>
+
 # Overview
 
 **Purpose**

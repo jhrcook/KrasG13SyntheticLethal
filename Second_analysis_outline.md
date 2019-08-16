@@ -11,6 +11,8 @@ output:
         df_print: paged
         code_folding: hide
         keep_md: true
+        includes:
+            in_header: header.html
 ---
 
 
