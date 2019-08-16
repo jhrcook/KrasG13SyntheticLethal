@@ -20,3 +20,6 @@ allele_pal <- c(
 allele_pal_no_underscore_names <- allele_pal
 names(allele_pal_no_underscore_names) <- stringr::str_replace_all(names(allele_pal), "_", " ")
 allele_pal <- c(allele_pal, allele_pal_no_underscore_names)
+
+kras_hotspots_num <- c(12, 13, 61, 117, 146)
+kras_hotspots_chr <- as.character(kras_hotspots_num)
