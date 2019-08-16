@@ -20,6 +20,8 @@ ras_muts <- readRDS(file.path("data", "ras_mutants_info.tib"))
 
 # cell lines with multiple RAS mutations
 double_muts <- ras_muts %>%
+    filter(disease == "colorectal") %>%
+    filter(ras == "KRAS" & codon %in% kras_hotspots_num) %>%
     select(ras_allele, dep_map_id) %>%
     unique() %>%
     count(dep_map_id) %>%
@@ -28,10 +30,11 @@ double_muts <- ras_muts %>%
 
 # KRAS mutants
 kras_muts <- ras_muts %>%
-    filter(disease %in% names(!!organs_pal)) %>%
+    filter(disease == "colorectal") %>%
     filter(ras == "KRAS" & !(dep_map_id %in% double_muts)) %>%
     select(dep_map_id, ras_allele) %>%
     mutate(codon = str_extract(ras_allele, "[:digit:]+")) %>%
+    filter(codon %in% kras_hotspots_chr) %>%
     unique()
 
 # cell line mutations
@@ -55,7 +58,8 @@ mapk_muts <- ccle_muts %>%
         (hugo_symbol == "NRAS" & str_detect(protein_change, "G12|G13|Q61")) |
         (hugo_symbol == "BRAF" & str_detect(protein_change, "V600"))
     ) %>%
-    pull(dep_map_id) %>%
+    select(dep_map_id, hugo_symbol) %>%
+    dplyr::rename(gene = "hugo_symbol") %>%
     unique()
 
 # do the cell lines `ids` have a mutation in genes `gs`
@@ -79,11 +83,11 @@ is_target_mutated <- function(ids, gs) {
 # [10] add status mutation of the target gene
 model_data <- dep_map %>%
     filter(disease == "colorectal") %>%
-    filter(!(dep_map_id %in% c(double_muts, mapk_muts))) %>%
+    filter(!(dep_map_id %in% c(double_muts, mapk_muts$dep_map_id))) %>%
     select(dep_map_id, gene, gene_effect, disease) %>%
     left_join(kras_muts, by = "dep_map_id") %>%
     group_by(gene) %>%
-    filter(any(gene_effect <= -0.25)) %>%
+    filter(any(gene_effect <= -0.15)) %>%
     ungroup() %>%
     left_join(ccle_muts_select, by = c("dep_map_id", "gene")) %>%
     mutate(
@@ -99,6 +103,62 @@ model_data <- dep_map %>%
 
 saveRDS(model_data, file.path("model_results", "model_data.rds"))
 
+# how many samples remove by KRAS double mutant filter
+dep_map %>%
+    filter(dep_map_id %in% double_muts) %>%
+    filter(disease == "colorectal") %>%
+    select(dep_map_id, gene, gene_effect, disease) %>%
+    left_join(kras_muts, by = "dep_map_id") %>%
+    group_by(gene) %>%
+    filter(any(gene_effect <= -0.15)) %>%
+    ungroup() %>%
+    left_join(ccle_muts_select, by = c("dep_map_id", "gene")) %>%
+    mutate(
+        target_is_mutated = ifelse(
+            is.na(target_is_mutated), FALSE, TRUE
+        ), ras_allele = ifelse(
+            is.na(ras_allele), "WT", ras_allele
+        ), codon = ifelse(
+            is.na(codon), "WT", codon
+        )
+    ) %>%
+    filter(codon %in% c("12", "13", "WT")) %>%
+    select(dep_map_id, ras_allele) %>%
+    unique()
+#> ANSWER: 0
+
+# how many samples were removed by activated MAPK filter
+dep_map %>%
+    filter(dep_map_id %in% mapk_muts$dep_map_id) %>%
+    filter(disease == "colorectal") %>%
+    select(dep_map_id, gene, gene_effect, disease) %>%
+    left_join(kras_muts, by = "dep_map_id") %>%
+    group_by(gene) %>%
+    filter(any(gene_effect <= -0.15)) %>%
+    ungroup() %>%
+    left_join(ccle_muts_select, by = c("dep_map_id", "gene")) %>%
+    mutate(
+        target_is_mutated = ifelse(
+            is.na(target_is_mutated), FALSE, TRUE
+        ), ras_allele = ifelse(
+            is.na(ras_allele), "WT", ras_allele
+        ), codon = ifelse(
+            is.na(codon), "WT", codon
+        )
+    ) %>%
+    filter(codon %in% c("12", "13", "WT")) %>%
+    select(dep_map_id, ras_allele) %>%
+    left_join(mapk_muts, by = "dep_map_id") %>%
+    unique()
+#> # A tibble: 5 x 3
+#>   dep_map_id ras_allele gene
+#>   <chr>      <chr>      <chr>
+#> 1 ACH-000253 WT         BRAF
+#> 2 ACH-000296 WT         BRAF
+#> 3 ACH-000552 WT         BRAF
+#> 4 ACH-000935 WT         BRAF
+#> 5 ACH-000943 WT         BRAF
+
 
 #### ---- (1) gene_effect ~ WT + G12 + G13D + mut_target ---- ####
 
@@ -112,12 +172,10 @@ model_data1 <- model_data %>%
     ))
 saveRDS(model_data1, file.path("model_results", "linear_model_1_data.rds"))
 
-
 model_data1 %>%
     select(dep_map_id, ras_allele) %>%
     unique() %>%
-    pull(ras_allele) %>%
-    table(useNA = "ifany")
+    count(ras_allele)
 
 # fit a linear model for each gene
 run_linear_model1 <- function(tib, ...) {
@@ -190,7 +248,7 @@ volcano_plot <- models1_open %>%
     )) %>%
     mutate(label = ifelse(!is.na(point_color), gene, "")) %>%
     ggplot_G12DvG13Dvolcano_wrapper() +
-    labs(x = "difference in estimate", y = "-log( model q-value )",
+    labs(x = "difference in estimate", y = "-log( model p-value )",
          color = "largest effect",
          title = "Difference in effect size of KRAS G12 and KRAS G13D",
          subtitle = "Highlighted genes had statistically significant models and a difference in estimate with magnitude of at least 0.15")
@@ -198,7 +256,7 @@ ggsave(
     filename = file.path(
         "images", "linear_model", "model1_DiffEstimateVolcano_plot.png"
     ), plot = volcano_plot,
-    width = 8, height = 6, units = "in", dpi = 300
+    width = 8, height = 6, units = "in", dpi = 200
 )
 
 
@@ -950,7 +1008,7 @@ gene_effect_density <- gene_effect_tib %>%
         legend.title = element_blank(),
         plot.title = element_text(hjust = 0.5)
     ) +
-    labs(x = "depletion effect",
+    labs(x = "depletion effect", y = "density",
          title = "The scale of depletion effect")
 ggsave(
     filename = file.path(
@@ -972,7 +1030,7 @@ kras_is_specifically_depleted <- function(alleles, estimates, p_values) {
         significant_alleles <- alleles[p_values < 0.05 & alleles != "WT"]
         if (length(significant_alleles) > 0) {
             sig_allele_estimates <- estimates[alleles %in% significant_alleles]
-            if (any(sig_allele_estimates < wt_estimate - 0.1)) {
+            if (any(sig_allele_estimates < min(-0.1, wt_estimate - 0.1))) {
                 return(TRUE)
             }
         }
@@ -1002,10 +1060,20 @@ model4_kras_dn <- models4_open %>%
     ungroup() %>%
     pull(gene) %>%
     unique()
+model6_kras_dn <- models6_open %>%
+    filter(p_value_model < 0.01 & str_detect(term, "WT|KRAS")) %>%
+    dplyr::rename(kras_allele = "term") %>%
+    group_by(gene) %>%
+    filter(kras_is_specifically_depleted(kras_allele, estimate, p_value_fit)) %>%
+    ungroup() %>%
+    pull(gene) %>%
+    unique()
+kras_dn <- sort(unique(c(model4_kras_dn, model6_kras_dn)))
 cat("number of genes specifically depleted by at least one KRAS allele:",
-    length(model4_kras_dn), "\n")
-cat(model4_kras_dn, sep = "\n",
-    file = file.path("model_results", "linear_model_4_dngenes.txt"))
+    length(kras_dn), "\n")
+cat(kras_dn, sep = "\n",
+    file = file.path("model_results", "linear_model_results_krasdn.txt"))
+
 
 model4_kras_up <- models4_open %>%
     filter(p_value_model < 0.01 & str_detect(term, "WT|KRAS")) %>%
@@ -1015,18 +1083,69 @@ model4_kras_up <- models4_open %>%
     ungroup() %>%
     pull(gene) %>%
     unique()
+model6_kras_up <- models6_open %>%
+    filter(p_value_model < 0.01 & str_detect(term, "WT|KRAS")) %>%
+    dplyr::rename(kras_allele = "term") %>%
+    group_by(gene) %>%
+    filter(kras_is_specifically_increased(kras_allele, estimate, p_value_fit)) %>%
+    ungroup() %>%
+    pull(gene) %>%
+    unique()
+kras_up <- sort(unique(c(model4_kras_up, model6_kras_up)))
 cat("number of genes specifically NOT depleted by at least one KRAS allele:",
-    length(model4_kras_up), "\n")
-cat(model4_kras_dn, sep = "\n",
-    file = file.path("model_results", "linear_model_4_upgenes.txt"))
+    length(kras_up), "\n")
+cat(kras_up, sep = "\n",
+    file = file.path("model_results", "linear_model_results_krasup.txt"))
+
+
+
+models4_open %>%
+    filter(gene %in% c(kras_dn, kras_up)) %>%
+    mutate(up_or_down = ifelse(gene %in% kras_dn, "down", "up"),
+           which_model = ifelse(gene %in% c(model4_kras_dn, model4_kras_up), "model 4", "model 6"),
+           which_model = ifelse(gene %in% c(model6_kras_dn, model6_kras_up) & which_model == "model 4", "both", which_model)) %>%
+    xlsx::write.xlsx(
+        file = file.path("model_results", "kras_depletion_specfic_genes.xlsx")
+    )
+
+
+#### ---- Gene expression vs. gene effect ---- ####
+
+models4_intercept <- models4_open %>%
+    filter(term == "WT") %>%
+    dplyr::rename(intercept = "estimate") %>%
+    select(gene, intercept)
+expression_effect <- models4_open %>%
+    filter(gene %in% c(kras_dn, kras_up) & term == "gene_expression_norm") %>%
+    select(gene, estimate) %>%
+    unique() %>%
+    left_join(models4_intercept, by = "gene") %>%
+    left_join(model_data3, by = "gene") %>%
+    mutate(ras_allele = str_replace_all(ras_allele, "_", " ")) %>%
+    ggplot(aes(x = gene_expression_norm, y = gene_effect)) +
+    facet_wrap(~ gene, scales = "free") +
+    geom_point(aes(color = ras_allele), size = 0.8) +
+    geom_abline(aes(slope = estimate, intercept = intercept)) +
+    scale_color_manual(values = allele_pal) +
+    theme_classic() +
+    theme(legend.position = "right") +
+    labs(x = "gene expression (scaled)", y = "depletion effect",
+         title = "Gene expression levels that trend with depletion effect",
+         color = "RAS allele")
+ggsave(
+    filename = file.path(
+        "images", "linear_model", "kras_specific_genes_expresseion_effect.png"
+    ), plot = expression_effect,
+    width = 12, height = 10, units = "in", dpi = 300
+)
+
+
+#### ---- KRAS up and down boxplots ---- ####
 
 # depletion boxplots
 # increased synthetic lethal interactions with KRAS
-model4_specificDepletion_plot <- models4_open %>%
-    filter(gene %in% model4_kras_dn) %>%
-    select(gene) %>%
-    unique() %>%
-    left_join(model_data3, by = "gene") %>%
+model4_specificDepletion_plot <- model_data1 %>%
+    filter(gene %in% kras_dn) %>%
     ggplot_G13Ddepletionboxplots_wrapper() +
     labs(y = "depletion", color = "RAS allele",
          title = "Target genes that had a stronger depleting effect in KRAS mutant cell lines")
@@ -1034,15 +1153,12 @@ ggsave(
     filename = file.path(
         "images", "linear_model", "model4_specificDepletion_plot.png"
     ), plot = model4_specificDepletion_plot,
-    width = 7, height = 5, units = "in", dpi = 300
+    width = 9, height = 6, units = "in", dpi = 300
 )
 
 # decreased synthetic lethal interactions with G13D
-model4_specificSurvival_plot <- models4_open %>%
-    filter(gene %in% model4_kras_up) %>%
-    select(gene) %>%
-    unique() %>%
-    left_join(model_data3, by = "gene") %>%
+model4_specificSurvival_plot <- model_data1 %>%
+    filter(gene %in% kras_up) %>%
     ggplot_G13Ddepletionboxplots_wrapper() +
     labs(y = "depletion", color = "RAS allele",
          title = "Target genes that had a weaker depleting effect in KRAS mutant cell lines")
@@ -1066,6 +1182,9 @@ ggsave(
     width = 3.75, height = 3.5, units = "in", dpi = 300
 )
 
+
+#### ---- KRAS up and down co-mutation heatmaps ---- ####
+
 # co-mutation values for the genes identified in the linear models
 gene_comuts <- cancer_data %>%
     filter(cancer == "COAD") %>%
@@ -1077,7 +1196,7 @@ gene_comuts <- cancer_data %>%
     group_by(ras_allele_grp) %>%
     mutate(ras_allele_grp_n = n_distinct(sampleid)) %>%
     ungroup() %>%
-    filter(gene %in% c(model4_kras_dn, model4_kras_up, "ASL")) %T>%
+    filter(gene %in% c(kras_dn, kras_up)) %T>%
     saveRDS(file.path("model_results", "linear_model_4_comutants.rds")) %>%
     group_by(gene, ras_allele_grp, ras_allele_grp_n) %>%
     summarise(co_mut_n = n_distinct(sampleid)) %>%
@@ -1089,7 +1208,7 @@ gene_comuts <- cancer_data %>%
         fill = list(ras_allele_grp_n = NA, co_mut_n = 0, co_mut_freq = 0)
     ) %>%
     mutate(up_down = ifelse(
-        gene %in% model4_kras_up,
+        gene %in% kras_up,
         "reduced depletion",
         "increased depletion"
     ))
@@ -1119,7 +1238,7 @@ ggsave(
     filename = file.path(
         "images", "linear_model", "comut_heatmap.png"
     ), plot = comut_heatmap,
-    width = 6.5, height = 4, units = "in", dpi = 400
+    width = 8, height = 4, units = "in", dpi = 400
 )
 
 # heatmap of co-mutation (color scaled within each gene)
@@ -1149,14 +1268,14 @@ ggsave(
     filename = file.path(
         "images", "linear_model", "comut_heatmap_rescaled.png"
     ), plot = comut_heatmap_rescaled,
-    width = 6.5, height = 4, units = "in", dpi = 400
+    width = 8, height = 4, units = "in", dpi = 400
 )
 
 
 # pheatmaps with hierarchical clustering
 
 save_pheatmap_png <- function(ph, filename,
-                              width = 6.5, height = 3.5, res = 300) {
+                              width = 8, height = 3.5, res = 300) {
     png(filename, width = width, height = height, unit = "in", res = res)
     grid::grid.newpage()
     grid::grid.draw(ph$gtable)
@@ -1180,7 +1299,7 @@ rownames(pheatmap_mat) <- pheatmap_mat$ras_allele_grp
 pheatmap_mat <- pheatmap_mat[, -1]
 # G13D down
 comut_pheatmap_dn <- pheatmap::pheatmap(
-    pheatmap_mat[, colnames(pheatmap_mat) %in% model4_kras_dn],
+    pheatmap_mat[, colnames(pheatmap_mat) %in% kras_dn],
     cluster_rows = FALSE,
     angle_col = 45,
     main = "Co-mutation frequency of the KRAS alleles and genes with\nincreased dependency in KRAS G13D cell lines"
@@ -1191,7 +1310,7 @@ save_pheatmap_png(
 )
 # G13D up
 comut_pheatmap_up <- pheatmap::pheatmap(
-    pheatmap_mat[, colnames(pheatmap_mat) %in% model4_kras_up],
+    pheatmap_mat[, colnames(pheatmap_mat) %in% kras_up],
     cluster_rows = FALSE,
     angle_col = 45,
     main = "Co-mutation frequency of the KRAS alleles and genes with\nreduced dependency in KRAS G13D cell lines"
@@ -1210,7 +1329,7 @@ rownames(pheatmap_mat) <- pheatmap_mat$ras_allele_grp
 pheatmap_mat <- pheatmap_mat[, -1]
 # G13D down
 comut_pheatmap_dn <- pheatmap::pheatmap(
-    pheatmap_mat[, colnames(pheatmap_mat) %in% model4_kras_dn],
+    pheatmap_mat[, colnames(pheatmap_mat) %in% kras_dn],
     cluster_rows = FALSE,
     angle_col = 45,
     main = "Co-mutation frequency of the KRAS alleles and genes with\nincreased dependency in KRAS G13D cell lines (rescaled)"
@@ -1221,7 +1340,7 @@ save_pheatmap_png(
 )
 # G13D up
 comut_pheatmap_up <- pheatmap::pheatmap(
-    pheatmap_mat[, colnames(pheatmap_mat) %in% model4_kras_up],
+    pheatmap_mat[, colnames(pheatmap_mat) %in% kras_up],
     cluster_rows = FALSE,
     angle_col = 45,
     main = "Co-mutation frequency of the KRAS alleles and genes with\nreduced dependency in KRAS G13D cell lines (rescaled)"

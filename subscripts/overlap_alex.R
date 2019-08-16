@@ -37,11 +37,25 @@ genetic_dep <- readRDS(genetic_dep_path)
 
 # significant hits
 dep_results_sig <- genetic_dep %>%
-    filter(q_value_model < 0.2 &
-           p_value_fit < 0.05 &
-           abs(estimate) > 0.15 &
-           term == "KRAS_G13D") %>%
-    select(gene, p_value_fit, estimate)
+    filter(p_value_model < 0.01 & str_detect(term, "KRAS|WT")) %>%
+    group_by(gene) %>%
+    filter(any(p_value_fit < 0.05 & abs(estimate) > 0.15 & term != "WT")) %>%
+    select(term, gene, p_value_fit, estimate)
+
+dep_results_sig_wide <- dep_results_sig %>%
+    mutate(vals = map2(p_value_fit, estimate, ~ list(pval = .x, est = .y))) %>%
+    select(-p_value_fit, -estimate) %>%
+    spread(key = term, value = vals) %>%
+    mutate(KRAS_G12_pval = map_dbl(KRAS_G12, ~ .x$pval),
+           KRAS_G12_est = map_dbl(KRAS_G12, ~ .x$est),
+           KRAS_G13D_pval = map_dbl(KRAS_G13D, ~ .x$pval),
+           KRAS_G13D_est = map_dbl(KRAS_G13D, ~ .x$est),
+           WT_pval = map_dbl(WT, ~ .x$pval),
+           WT_est = map_dbl(WT, ~ .x$est)) %>%
+    select(-KRAS_G12, -KRAS_G13D, -WT)
+
+cat("number of genes called as significant from dependency analysis:",
+    n_distinct(dep_results_sig$gene), "\n")
 
 model_data_3 <- readRDS(file.path("model_results", "linear_model_3_data.rds"))
 
@@ -56,13 +70,17 @@ alex_results_sig <- alex_results %>%
     jhcutils::u_pull(gene) %>%
     str_to_upper()
 
-dep_results_sig <- genetic_dep %>%
-    filter(q_value_model < 0.2 &
-           p_value_fit < 0.05 &
-           abs(estimate) > 0.15 &
-           term == "KRAS_G13D")
+cat("number of genes called as significant from RNA-seq analysis:",
+    n_distinct(alex_results_sig), "\n")
 
-intersect(alex_results_sig, dep_results_sig$gene)
+gene_intersection <- intersect(alex_results_sig, dep_results_sig$gene)
+if (length(gene_intersection) > 0) {
+    cat("Below are the genes that overlap from dependecy analysis and RNA-seq analysis:\n")
+    cat(gene_intersection)
+    cat("\n")
+} else {
+    cat("No genes overlap from the dependency and RNA-seq analysis.\n")
+}
 
 # volcano plot with `alex_results_sig` genes highlighted
 comparison_volcano <- genetic_dep %>%
@@ -70,7 +88,7 @@ comparison_volcano <- genetic_dep %>%
         color = gene %in% alex_results_sig,
         size = color,
         label = ifelse(
-            color & (abs(estimate) > 0.075 | -log(p_value_fit) > 1.25), gene, ""
+            color & (abs(estimate) > 0.075 | -log(p_value_fit) > 1.25), gene, NA
     )) %>%
     filter(term == "KRAS_G13D") %>%
     ggplot(aes(x = estimate, y = -log(p_value_fit))) +
@@ -104,7 +122,7 @@ hint_ppi <- readRDS(file.path("data", "HINT_full_tidygraph.rds")) %>%
 
 # add info from genetic dependencies and DGE
 dep_ppi <- hint_ppi %N>%
-    left_join(dep_results_sig, by = c("name" = "gene")) %>%
+    left_join(dep_results_sig_wide, by = c("name" = "gene")) %>%
     mutate(is_dep = name %in% !!dep_results_sig$gene,
            is_deg = name %in% !!alex_results_sig) %>%
     mutate(

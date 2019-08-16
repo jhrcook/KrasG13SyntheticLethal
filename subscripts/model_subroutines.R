@@ -71,7 +71,7 @@ ggplot_G13Ddepletionboxplots_wrapper <- function(tib) {
 ggplot_G12DvG13Dvolcano_wrapper <- function(tib) {
     g <- tib %>%
         mutate(point_color = str_replace_all(point_color, "_", " ")) %>%
-        ggplot(aes(x = diff_estimate, y = -log(q_value_model))) +
+        ggplot(aes(x = diff_estimate, y = -log(p_value_model))) +
         geom_point(aes(color = point_color), size = 0.8) +
         geom_vline(xintercept = 0, color = "grey20", size = 0.5, linetype = 2) +
         ggrepel::geom_text_repel(aes(label = label),
@@ -89,7 +89,7 @@ ggplot_G12DvG13Dvolcano_wrapper <- function(tib) {
 }
 
 tiled_volcano_ylims <- function(tib) {
-    c(0, round(-log(min(tib$q_value_model)) + 1))
+    c(0, round(-log(min(tib$p_value_model)) + 1))
 }
 
 tiled_volcano_xlims <- function(tib, side) {
@@ -111,7 +111,7 @@ ggplot_G12DvG13Dvolcano_tiled_wrapper <- function(volcano_data) {
     xlim_right <- tiled_volcano_xlims(volcano_data, "right")
 
     volcano_center <- volcano_data %>%
-        ggplot(aes(x = diff_estimate, y = -log(q_value_model))) +
+        ggplot(aes(x = diff_estimate, y = -log(p_value_model))) +
         geom_point(aes(color = point_color), size = 0.8) +
         geom_vline(xintercept = 0, color = "grey20", size = 0.5, linetype = 2) +
         scale_color_manual(values = c(allele_pal, "not_sig" = "grey60"),
@@ -128,7 +128,7 @@ ggplot_G12DvG13Dvolcano_tiled_wrapper <- function(volcano_data) {
         ) +
         labs(x = "difference in estimate")
     volcano_left <- volcano_data %>%
-        ggplot(aes(x = diff_estimate, y = -log(q_value_model))) +
+        ggplot(aes(x = diff_estimate, y = -log(p_value_model))) +
         geom_point(aes(color = point_color), size = 0.8) +
         geom_vline(xintercept = 0, color = "grey20", size = 0.5, linetype = 2) +
         ggrepel::geom_text_repel(
@@ -145,7 +145,7 @@ ggplot_G12DvG13Dvolcano_tiled_wrapper <- function(volcano_data) {
         ) +
         labs(y = "-log( p-value of model )", x = "difference in estimate")
     volcano_right <- volcano_data %>%
-        ggplot(aes(x = diff_estimate, y = -log(q_value_model))) +
+        ggplot(aes(x = diff_estimate, y = -log(p_value_model))) +
         geom_point(aes(color = point_color), size = 0.8) +
         geom_vline(xintercept = 0, color = "grey20", size = 0.5, linetype = 2) +
         ggrepel::geom_text_repel(
