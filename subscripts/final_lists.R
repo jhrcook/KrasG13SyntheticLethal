@@ -63,6 +63,26 @@ model_data %>%
                      sheetName = "dependency scores",
                      append = TRUE)
 
+# spread by the gene effect
+model_data %>%
+    select(-target_is_mutated) %>%
+    filter(gene %in% !!final_list_of_hits) %>%
+    mutate(ras_allele = str_remove_all(ras_allele, "KRAS_")) %>%
+    group_by(disease, codon, gene) %>%
+    summarise(
+        dep_map_ids = paste(dep_map_id, collapse = ", "),
+        cell_line_names = paste(cell_line_name, collapse = ", "),
+        ras_alleles = paste(ras_allele, collapse = ", "),
+        num_cell_lines = n_distinct(dep_map_id),
+        mean_gene_effect = mean(gene_effect)
+    ) %>%
+    ungroup() %>%
+    arrange(disease, gene, codon) %>%
+    xlsx::write.xlsx(file = output_excel_file,
+                     sheetName = "mean dependency scores",
+                     append = TRUE)
+
+
 # all data in tall (tidy) format
 model_data %>%
     filter(gene %in% !!final_list_of_hits) %>%

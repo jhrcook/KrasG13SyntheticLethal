@@ -13,9 +13,11 @@ unnest_model_results <- function(tib) {
                model_info = map(linear_model, ~ .x$model_info)) %>%
         select(-linear_model) %>%
         unnest(model_info) %>%
-        unnest(model_fit) %>%
         dplyr::rename(p_value_model = "p_value",
-                      p_value_fit = "p_value1") %>%
+                      statistic_model = "statistic") %>%
+        unnest(model_fit) %>%
+        dplyr::rename(p_value_fit = "p_value",
+                      statistic_fit = "statistic") %>%
         mutate(q_value_model = p.adjust(p_value_model, method = "BH"))
     return(new_tib)
 }
@@ -35,7 +37,8 @@ ggplot_G12vG13Dscatter_wrapper <- function(tib, x_grp,
             color = "grey20", linetype = 2, size = 1
         ) +
         ggrepel::geom_text_repel(
-            aes(label = label), size = 2, color = "grey20"
+            aes(label = label), size = 2, color = "grey20",
+            family = "arial"
         ) +
         scale_color_manual(
             values = c(allele_pal, "not_sig" = "grey60"),
@@ -59,6 +62,7 @@ ggplot_G13Ddepletionboxplots_wrapper <- function(tib) {
         scale_color_manual(values = c(allele_pal, "TRUE" = "seagreen3", "FALSE" = "grey65")) +
         theme_minimal() +
         theme(
+            text = element_text("arial"),
             axis.text.x = element_blank(),
             axis.title.x = element_blank(),
             axis.text.y = element_text(size = 6),
@@ -82,6 +86,7 @@ ggplot_G12DvG13Dvolcano_wrapper <- function(tib) {
         scale_y_continuous(expand = expand_scale(mult = c(0, 0.05))) +
         theme_bw() +
         theme(
+            text = element_text("arial"),
             legend.position = c(0.85, 0.85),
             legend.background = element_blank(),
         )
@@ -120,6 +125,7 @@ ggplot_G12DvG13Dvolcano_tiled_wrapper <- function(volcano_data) {
         scale_y_continuous(limits = ylim, expand = c(0, 0)) +
         theme_bw() +
         theme(
+            text = element_text("arial"),
             legend.position = "none",
             legend.background = element_blank(),
             axis.title.y = element_blank(),
@@ -141,6 +147,7 @@ ggplot_G12DvG13Dvolcano_tiled_wrapper <- function(volcano_data) {
         scale_y_continuous(limits = ylim, expand = c(0, 0)) +
         theme_bw() +
         theme(
+            text = element_text("arial"),
             legend.position = "none"
         ) +
         labs(y = "-log( p-value of model )", x = "difference in estimate")
@@ -158,6 +165,7 @@ ggplot_G12DvG13Dvolcano_tiled_wrapper <- function(volcano_data) {
         scale_y_continuous(limits = ylim, expand = c(0, 0)) +
         theme_bw() +
         theme(
+            text = element_text("arial"),
             legend.position = c(0.8, 0.8),
             axis.title.y = element_blank(),
             axis.text.y = element_blank(),
@@ -184,7 +192,10 @@ ggplot_G13Dvolcano_wrapper <- function(tib) {
             ), na.value = "grey70"
         ) +
         scale_y_continuous(expand = expand_scale(mult = c(0, 0.05))) +
-        theme_bw()
+        theme_bw() +
+        theme(
+            text = element_text("arial")
+        )
     return(g)
 }
 
