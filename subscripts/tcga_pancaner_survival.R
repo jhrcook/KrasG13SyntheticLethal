@@ -63,3 +63,59 @@ xlsx::write.xlsx(patient_info,
                  file = file.path("data", "survival_data.xlsx"),
                  sheetName = "survival",
                  append = FALSE)
+
+#### ---- Other drivers ---- ####
+
+other_drivers <- c(
+    "KRAS", "BRAF", "PIK3CA", "EGFR", "NRAS", "APC", "TP53"
+)
+
+classify_sift <- function(scores) {
+    scores %>%
+        str_remove("\\(.+\\)$") %>%
+        factor(levels = c("deleterious", "tolerated", ".")) %>%
+        as.numeric()
+}
+
+classify_polyphen <- function(scores) {
+    scores %>%
+        str_remove("\\(.+\\)$") %>%
+        factor(levels = c("probably_damaging", "possibly_damaging", "benign", ".")) %>%
+        as.numeric()
+}
+
+classify_impact <- function(scores) {
+    scores %>%
+        factor(levels = c("HIGH", "MODERATE")) %>%
+        as.numeric()
+}
+
+
+other_driver_muts <- tcga_coad_muts %>%
+    filter(hugo_symbol %in% !!other_drivers) %>%
+    filter(variant_classification %in% !!coding_mut_var_classes) %>%
+    select(tumor_sample_barcode, hugo_symbol, hgv_sp_short, sift, poly_phen, impact) %>%
+    mutate(
+        sift_num = classify_sift(sift),
+        poly_phen_num = classify_polyphen(poly_phen),
+        impact_num = classify_impact(impact)
+    ) %>%
+    filter(sift_num <= 2, poly_phen_num <= 2, impact_num <= 2)
+
+
+tumor_supressors <- c("APC", "TP53", "PTEN")
+
+tcga_coad_cna <- data_path("data_CNA.txt") %>%
+    read_tsv(progress = FALSE) %>%
+    select(-Entrez_Gene_Id) %>%
+    filter(Hugo_Symbol %in% c(tumor_supressors, other_drivers)) %>%
+    pivot_longer(-Hugo_Symbol,
+                 names_to = "tumor_sample_barcode",
+                 values_to = "cna") %>%
+    janitor::clean_names()
+
+full_join(other_driver_muts, tcga_coad_cna,
+          by = c("hugo_symbol", "tumor_sample_barcode")) %>%
+    xlsx::write.xlsx(file = file.path("data", "survival_data.xlsx"),
+                     sheetName = "mutations",
+                     append = TRUE)

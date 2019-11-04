@@ -119,3 +119,5 @@ tar -xzf coadread_tcga_pan_can_atlas_2018.tar.gz
 ```
 
 From these data, I created "data/survival_data.xlsx" (and a TSV) with the patient information annotated with *KRAS* allele.
+
+I also added a sheet to the Excel spreadsheet for other oncogenic mutations and CNA per sample.
