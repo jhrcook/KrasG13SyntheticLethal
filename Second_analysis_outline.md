@@ -52,15 +52,15 @@ A data table of the result of running each gene through this model is available 
 
 The following plot shows the difference between the coefficients assigned to the variables for *KRAS* G12 and G13D on the x-axis and the log-transformed p-value of the model on the y-axis. Each point is a gene targeted during the screen.
 
-<img src="images/linear_model/model4_DiffEstimateVolcano_plot.png" width="750" />
+<img src="images/linear_model/model4_DiffEstimateVolcano_plot.svg" width="750" />
 
 The following plot shows, for each gene (point), the coefficients assigned to the variables for *KRAS* G12 and G13D on the x and y-axes, respectively. The highlighted genes are those with a difference in coefficients of eat least 0.2 and a significant model p-value.
 
-<img src="images/linear_model/model4_G12VsG13dScatter_plot.png" width="750" />
+<img src="images/linear_model/model4_G12VsG13dScatter_plot.svg" width="750" />
 
 The box-plots below show the depletion scores in each cell line (each point) for genes (each box-plot is for a different target gene) with a statistically significant model and the *KRAS* G13D coefficient was at or below -0.15 and had a significant p-value. Therefore, these are genes that had a stronger depletion effect when target in *KRAS* G13D and in *KRAS* WT.
 
-<img src="images/linear_model/model4_G13dDepletion_plot.png" width="900" />
+<img src="images/linear_model/model4_G13dDepletion_plot.svg" width="900" />
 
 
 ## Filters
@@ -71,7 +71,7 @@ The goal was to find genes that displayed *KRAS* allele-specific synthetic letha
 
 To find a depletion effect value to define the "lethality" boundary, I used the scores of pan essential and non-essential genes in the cell lines. The point of overlap of their histograms can provide a logical point to serve as the boundary here.
 
-<img src="images/linear_model/gene_effect_density.png" width = "400" /> 
+<img src="images/linear_model/gene_effect_density.svg" width = "400" /> 
 
 A *KRAS* allele passed the final step in the filter if it had a depletion value of either -0.1 or 0.1 lower than the average in WT,  whichever is smaller.
 
@@ -82,20 +82,40 @@ A *KRAS* allele passed the final step in the filter if it had a depletion value 
 
 Below are the genes that passed these filters. First are the genes that caused depletion in at least one *KRAS* allele, followed by the genes that had a reduced effect when knockout-in cell lines with a *KRAS* mutation.
 
-<img src="images/linear_model/model4_specificDepletion_plot.png" width="900" />
+<img src="images/linear_model/model4_specificDepletion_plot.svg" width="900" />
 
-<img src="images/linear_model/model4_specificSurvival_plot.png" width="900" />
+<img src="images/linear_model/model4_specificSurvival_plot.svg" width="900" />
 
 Below is the same box-plot for *ASL* a gene previously found to have a *KRAS* allele-specific synthetic lethal interaction.
 
-<img src="images/linear_model/validated_synlet_plot.png" width="400" />
+<img src="images/linear_model/validated_synlet_plot.svg" width="400" />
 
 ### Co-mutation
 
 We hypothesize that if a gene has a synthetic-lethal interaction with a *KRAS* allele, it would be less likely to mutate with that allele, *in vivo*. The heatmaps below show the rates of co-mutation between the indicates *KRAS* allele (y-axis) and the gene from the previous screen (x-axis). The color indicates the frequency of co-mutation and the integers indicate the actual number of co-mutation events.
 
-<img src="images/linear_model/comut_heatmap.png" width = "700" />
+<img src="images/linear_model/comut_heatmap.svg" width = "700" />
 
 The following is the same plot except the fill color has been scaled from blue to red within each gene.
 
-<img src="images/linear_model/comut_heatmap_rescaled.png" width = "700" />
+<img src="images/linear_model/comut_heatmap_rescaled.svg" width = "700" />
+
+
+---
+
+## TCGA survival data
+
+Yi-Jang was interested in the survival data from TCGA, so I helped gather the data for her.
+
+It was downloaded from the following URL:  
+http://download.cbioportal.org/coadread_tcga_pan_can_atlas_2018.tar.gz
+
+```bash
+curl -O http://download.cbioportal.org/coadread_tcga_pan_can_atlas_2018.tar.gz
+mkdir coadread_tcga_pan_can_atlas_2018
+mv coadread_tcga_pan_can_atlas_2018.tar.gz coadread_tcga_pan_can_atlas_2018
+cd coadread_tcga_pan_can_atlas_2018
+tar -xzf coadread_tcga_pan_can_atlas_2018.tar.gz
+```
+
+From these data, I created "data/survival_data.xlsx" (and a TSV) with the patient information annotated with *KRAS* allele.

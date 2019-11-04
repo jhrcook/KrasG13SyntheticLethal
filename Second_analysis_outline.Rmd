@@ -98,3 +98,23 @@ We hypothesize that if a gene has a synthetic-lethal interaction with a *KRAS* a
 The following is the same plot except the fill color has been scaled from blue to red within each gene.
 
 <img src="images/linear_model/comut_heatmap_rescaled.svg" width = "700" />
+
+
+---
+
+## TCGA survival data
+
+Yi-Jang was interested in the survival data from TCGA, so I helped gather the data for her.
+
+It was downloaded from the following URL:  
+http://download.cbioportal.org/coadread_tcga_pan_can_atlas_2018.tar.gz
+
+```bash
+curl -O http://download.cbioportal.org/coadread_tcga_pan_can_atlas_2018.tar.gz
+mkdir coadread_tcga_pan_can_atlas_2018
+mv coadread_tcga_pan_can_atlas_2018.tar.gz coadread_tcga_pan_can_atlas_2018
+cd coadread_tcga_pan_can_atlas_2018
+tar -xzf coadread_tcga_pan_can_atlas_2018.tar.gz
+```
+
+From these data, I created "data/survival_data.xlsx" (and a TSV) with the patient information annotated with *KRAS* allele.
