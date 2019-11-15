@@ -100,10 +100,14 @@ other_driver_muts <- tcga_coad_muts %>%
         poly_phen_num = classify_polyphen(poly_phen),
         impact_num = classify_impact(impact)
     ) %>%
-    filter(sift_num <= 2, poly_phen_num <= 2, impact_num <= 2)
+    filter(sift_num <= 2 | poly_phen_num <= 2 | impact_num <= 2)
 
+if (any(is.na(other_driver_muts))) {
+    stop("There are missing values `other_driver_muts`.")
+}
 
 tumor_supressors <- c("APC", "TP53", "PTEN")
+
 
 tcga_coad_cna <- data_path("data_CNA.txt") %>%
     read_tsv(progress = FALSE) %>%
