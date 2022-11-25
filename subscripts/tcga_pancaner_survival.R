@@ -64,6 +64,8 @@ xlsx::write.xlsx(patient_info,
                  sheetName = "survival",
                  append = FALSE)
 
+
+
 #### ---- Other drivers ---- ####
 
 other_drivers <- c(
